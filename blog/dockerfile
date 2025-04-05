@@ -1,0 +1,47 @@
+
+# ---- Stage 1: Build ----
+# Install dependencies needed for some native Node modules and Next.js on Alpine
+# libc6-compat is for compatibility, openssl might be needed by node-fetch/Next.js
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat openssl
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
+WORKDIR /app
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+RUN pnpm build
+
+
+# ---- Stage 2: Production Runner ----
+FROM node:20-alpine AS runner
+RUN apk add --no-cache libc6-compat openssl
+
+ENV PORT=3000
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+# Optional: Set HOSTNAME if needed for the server binding
+ENV HOSTNAME=0.0.0.0
+
+WORKDIR /app
+# Create a non-root user and group for security | 1001 because 1000 is often used by the first user in Docker
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy build artifacts from the builder stage and set ownership
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+USER nextjs
+
+EXPOSE 3000
+
+# Run
+CMD ["node", "server.js"]
+
