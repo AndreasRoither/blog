@@ -1,8 +1,10 @@
 import Footer from "@/components/Footer";
+import { getAllSeries } from "@/lib/series";
 import { siteMetadata } from "@/lib/siteMetadata";
+import { format } from "date-fns";
 import Link from "next/link";
 import { getAllPostsMeta } from "../lib/posts";
-import type { PostMeta } from "../model/model";
+import type { PostMeta, Series } from "../model/model";
 
 const calculateTagCounts = (posts: PostMeta[]): Record<string, number> => {
   const counts: Record<string, number> = {};
@@ -16,12 +18,56 @@ const calculateTagCounts = (posts: PostMeta[]): Record<string, number> => {
   return counts;
 };
 
+const PostCard = ({ post }: { post: PostMeta }) => (
+  <div className="mb-6 rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+    {" "}
+    {/* */}
+    <Link href={`/posts/${post.slug}`} className="hover:underline">
+      <h3 className="text-lg font-semibold tracking-tight mb-1">{post.title}</h3>
+    </Link>
+    <p className="text-sm text-muted-foreground mb-2">
+      {" "}
+      {/* */}
+      {post.formattedDate} &middot; {post.readTime}
+      {post.series && ` (Series: ${post.series} - Part ${post.seriesPart})`}
+    </p>
+    <p className="text-sm leading-relaxed">{post.description}</p>
+  </div>
+);
+
+const SeriesCard = ({ series }: { series: Series }) => (
+  <div className="mb-6 rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+    {" "}
+    <Link href={`/series/${series.slug}`} className="hover:underline">
+      <h3 className="text-lg font-semibold tracking-tight mb-1">{series.title}</h3>
+    </Link>
+    <p className="text-sm text-muted-foreground mb-2">
+      {" "}
+      {series.posts.length} Part{series.posts.length === 1 ? "" : "s"} &middot; Last updated:{" "}
+      {format(new Date(series.lastModified), "PPP")}
+    </p>
+    {series.description && <p className="text-sm leading-relaxed mb-2">{series.description}</p>}
+    <div className="text-xs">
+      {series.posts.slice(0, 3).map((p) => (
+        <div key={p.slug}>
+          <Link href={`/posts/${p.slug}`} className="text-blue-600 hover:underline">
+            Part {p.seriesPart}: {p.title}
+          </Link>
+        </div>
+      ))}
+      {series.posts.length > 3 && <div className="italic">...and more</div>}
+    </div>
+  </div>
+);
+
 export default async function Home() {
   // Fetch posts directly here (server-side)
   // Sort tags by count desc
   const posts = await getAllPostsMeta();
   const tagCounts = calculateTagCounts(posts);
   const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]); // Sort by count (descending)
+  const latestPosts = (await getAllPostsMeta()).slice(0, 5); // Get latest 5 posts
+  const latestSeries = (await getAllSeries()).slice(0, 3); // Get latest 3 series
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -61,8 +107,47 @@ export default async function Home() {
           </ul>
         </section>
 
-        {posts?.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <section>
+            <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Latest Posts</h2>
+            <div className="overflow-y-auto max-h-[600px] pr-2">
+              {latestPosts.length > 0 ? (
+                latestPosts.map((post) => <PostCard key={post.slug} post={post} />)
+              ) : (
+                <p className="text-muted-foreground">No posts published yet.</p>
+              )}
+            </div>
+            {latestPosts.length > 0 && (
+              <div className="mt-4 text-right">
+                <Link href="/posts" className="text-sm text-blue-600 hover:underline">
+                  View all posts &rarr;
+                </Link>
+              </div>
+            )}
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Tutorial Series</h2>
+            <div className="overflow-y-auto max-h-[600px] pr-2">
+              {" "}
+              {latestSeries.length > 0 ? (
+                latestSeries.map((series) => <SeriesCard key={series.slug} series={series} />)
+              ) : (
+                <p className="text-muted-foreground">No tutorial series available yet.</p>
+              )}
+            </div>
+            {latestSeries.length > 0 && (
+              <div className="mt-4 text-right">
+                <Link href="/series" className="text-sm text-blue-600 hover:underline">
+                  View all series &rarr;
+                </Link>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {posts?.length > 0 && (
+          <section className="mt-12">
             <div className="flex flex-wrap gap-3">
               <span
                 className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium cursor-default"

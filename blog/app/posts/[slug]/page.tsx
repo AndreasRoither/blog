@@ -1,11 +1,14 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import Footer from "@/components/Footer";
 import TableOfContents from "@/components/TableOfContents";
+import { createSlug } from "@/lib/post-utils";
 import { getAllPostSlugs, getPostBySlug } from "@/lib/posts";
+import { getSeriesBySlug } from "@/lib/series";
 import { siteMetadata } from "@/lib/siteMetadata";
-import type { Post } from "@/model/model";
+import type { Post, Series } from "@/model/model";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Options as RehypePrettyCodeOptions } from "rehype-pretty-code";
@@ -110,7 +113,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  const { slug } = await params; // dynamic api is async
+  const { slug } = await params;
   const post: Post | null = await getPostBySlug(slug);
 
   if (!post) {
@@ -132,6 +135,17 @@ export default async function PostPage({ params }: PostPageProps) {
   const imageUrlAbsolute = image?.startsWith("http")
     ? image
     : `${siteMetadata.siteUrl}${image?.startsWith("/") ? "" : "/"}${image}`;
+
+  let seriesData: Series | null = null;
+  let postIndexInSeries = -1;
+
+  if (post.series) {
+    const seriesSlug = createSlug(post.series);
+    seriesData = await getSeriesBySlug(seriesSlug);
+    if (seriesData) {
+      postIndexInSeries = seriesData.posts.findIndex((p) => p.slug === post.slug);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -209,7 +223,39 @@ export default async function PostPage({ params }: PostPageProps) {
           </div>
         </article>
 
-        <aside className="hidden lg:block lg:w-64 xl:w-72 flex-shrink-0">
+        <aside className="hidden lg:block lg:w-64 xl:w-80 flex-shrink-0">
+          {seriesData && postIndexInSeries !== -1 && (
+            <div className="my-6 p-4 border rounded bg-muted not-prose">
+              <h3 className="text-base font-semibold mb-2">
+                <p>Part {post.seriesPart} of the series: </p>
+                <Link href={`/series/${seriesData.slug}`} className="text-blue-600 hover:underline">
+                  {seriesData.title}
+                </Link>
+              </h3>
+              <div className="flex justify-between text-sm">
+                {postIndexInSeries > 0 ? (
+                  <Link
+                    href={`/posts/${seriesData.posts[postIndexInSeries - 1].slug}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    <span className="">&larr; Previous</span>
+                  </Link>
+                ) : (
+                  <span className="opacity-50">No Previous entry</span>
+                )}
+                {postIndexInSeries < seriesData.posts.length - 1 ? (
+                  <Link
+                    href={`/posts/${seriesData.posts[postIndexInSeries + 1].slug}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    <span className="">Next &rarr;</span>
+                  </Link>
+                ) : (
+                  <span className="opacity-50">Next is not out yet!</span>
+                )}
+              </div>
+            </div>
+          )}
           <TableOfContents headings={headings} />
         </aside>
       </div>

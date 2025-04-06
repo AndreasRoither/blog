@@ -16,6 +16,9 @@ export interface PostFrontmatter {
   tags?: string[];
   draft?: boolean;
   image?: string;
+  series?: string;
+  seriesPart?: number;
+  seriesTotal?: number;
   // todo: more fields, maybe image?
 }
 
@@ -33,4 +36,12 @@ export interface Post extends PostMeta {
   headings: Heading[];
 }
 
-
+// tutorial series
+export interface Series {
+  title: string;
+  slug: string;
+  posts: PostMeta[];
+  lastModified: string;
+  description?: string;
+  image?: string;
+}
