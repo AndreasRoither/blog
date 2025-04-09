@@ -1,9 +1,9 @@
-import type { Series } from "@/model/model";
+import type { PostMeta, Series } from "@/model/model";
 import { createSlug } from "./post-utils";
 import { getAllPostsMeta } from "./posts";
 
-export async function getAllSeries(): Promise<Series[]> {
-  const allPosts = await getAllPostsMeta(); // Reuse existing function
+export async function getAllSeries(posts?: PostMeta[]): Promise<Series[]> {
+  const allPosts = posts ?? await getAllPostsMeta();
   const seriesMap: Map<string, Series> = new Map();
 
   for (const post of allPosts) {
@@ -57,7 +57,7 @@ export async function getAllSeries(): Promise<Series[]> {
   return allSeries;
 }
 
-// --- NEW (Optional): Function to get a single series by its slug ---
+// get a single series by its slug
 export async function getSeriesBySlug(slug: string): Promise<Series | null> {
   const allSeries = await getAllSeries();
   return allSeries.find(series => series.slug === slug) || null;

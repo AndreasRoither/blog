@@ -21,17 +21,20 @@ const SeriesOverviewCard = ({ series }: { series: Series }) => (
   <div className="mb-8 rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-shadow hover:shadow-lg">
     {series.image && (
       <div className="relative h-40 w-full">
-        <Image
-          src={
-            series.image.startsWith("http")
-              ? series.image
-              : `${siteMetadata.siteUrl}${series.image.startsWith("/") ? "" : "/"}${series.image}`
-          }
-          alt={`Cover image for ${series.title} series`}
-          fill
-          style={{ objectFit: "cover" }}
-          sizes="(max-width: 768px) 100vw, 50vw"
-        />
+        {series.image && (
+          <Image
+            src={
+              series.image.startsWith("http")
+                ? series.image
+                : `${siteMetadata.siteUrl}${series.image.startsWith("/") ? "" : "/"}${series.image}`
+            }
+            alt={`Cover image for ${series.title} series`}
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="rounded-lg shadow-lg"
+          />
+        )}
       </div>
     )}
     <div className="p-4 md:p-6">

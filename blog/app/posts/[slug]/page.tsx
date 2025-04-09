@@ -1,8 +1,7 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
-import Footer from "@/components/Footer";
+import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
 import { createSlug } from "@/lib/post-utils";
 import { getAllPostSlugs, getPostBySlug } from "@/lib/posts";
@@ -148,119 +147,122 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="max-w-7xl mx-auto px-4 py-8 lg:flex lg:flex-row lg:gap-12 flex-grow">
-        <div className="hidden lg:block lg:w-16 flex-shrink-0">
-          <Link
-            href="/"
-            className="sticky top-24 text-blue-500 hover:underline dark:text-blue-400 text-sm"
-          >
-            ← cd ..
-          </Link>
-        </div>
+    <SiteLayout>
+      <div className="min-h-screen flex flex-col">
+        <div className="max-w-7xl mx-auto px-4 py-8 lg:flex lg:flex-row lg:gap-12 flex-grow">
+          <div className="hidden lg:block lg:w-16 flex-shrink-0">
+            <Link
+              href="/"
+              className="sticky top-24 text-blue-500 hover:underline dark:text-blue-400 text-sm"
+            >
+              ← cd ..
+            </Link>
+          </div>
 
-        <article className="flex-grow max-w-3xl w-full lg:w-auto">
-          {" "}
-          <Link
-            href="/"
-            className="lg:hidden text-blue-500 hover:underline mb-4 block dark:text-blue-400"
-          >
-            ← cd ..
-          </Link>
-          <header className="mb-8">
-            <h1 className="text-6xl font-bold">
-              {draft && <span className="text-yellow-500 mr-2">[DRAFT]</span>}
-              {title}
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm pt-4">
-              {formattedDate} | {readTime}
-            </p>
-
-            {formattedLastModifiedDate && formattedLastModifiedDate !== formattedDate && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm pt-1">
-                Last update: {formattedLastModifiedDate}
+          <article className="flex-grow max-w-3xl w-full lg:w-auto">
+            {" "}
+            <Link
+              href="/"
+              className="lg:hidden text-blue-500 hover:underline mb-4 block dark:text-blue-400"
+            >
+              ← cd ..
+            </Link>
+            <header className="mb-8">
+              <h1 className="text-6xl font-bold">
+                {draft && <span className="text-yellow-500 mr-2">[DRAFT]</span>}
+                {title}
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm pt-4">
+                {formattedDate} | {readTime}
               </p>
-            )}
 
-            {draft && (
-              <p className="text-yellow-500 dark:text-yellow-400 text-sm pt-2">
-                This post is a draft and may not be complete.
-              </p>
-            )}
+              {formattedLastModifiedDate && formattedLastModifiedDate !== formattedDate && (
+                <p className="text-gray-500 dark:text-gray-400 text-sm pt-1">
+                  Last update: {formattedLastModifiedDate}
+                </p>
+              )}
 
-            {tags && tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-4">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-gray-300"
-                  >
-                    {tag}
-                  </span>
-                ))}
+              {draft && (
+                <p className="text-yellow-500 dark:text-yellow-400 text-sm pt-2">
+                  This post is a draft and may not be complete.
+                </p>
+              )}
+
+              {tags && tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-gray-700 dark:text-gray-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </header>
+            {image && (
+              <div className="mb-8">
+                <img
+                  src={imageUrlAbsolute}
+                  alt={title}
+                  className="w-full h-auto rounded-lg shadow-lg"
+                />
               </div>
             )}
-          </header>
-          {image && (
-            <div className="mb-8">
-              <img
-                src={imageUrlAbsolute}
-                alt={title}
-                className="w-full h-auto rounded-lg shadow-lg"
+            <div className="prose lg:prose-xl dark:prose-invert max-w-none">
+              <MDXRemote
+                source={content}
+                options={{
+                  mdxOptions: {
+                    remarkPlugins: [remarkGfm],
+                    rehypePlugins: [rehypeSlug, [rehypePrettyCode, prettyCodeOptions]],
+                  },
+                }}
               />
             </div>
-          )}
-          <div className="prose lg:prose-xl dark:prose-invert max-w-none">
-            <MDXRemote
-              source={content}
-              options={{
-                mdxOptions: {
-                  remarkPlugins: [remarkGfm],
-                  rehypePlugins: [rehypeSlug, [rehypePrettyCode, prettyCodeOptions]],
-                },
-              }}
-            />
-          </div>
-        </article>
+          </article>
 
-        <aside className="hidden lg:block lg:w-64 xl:w-80 flex-shrink-0">
-          {seriesData && postIndexInSeries !== -1 && (
-            <div className="my-6 p-4 border rounded bg-muted not-prose">
-              <h3 className="text-base font-semibold mb-2">
-                <p>Part {post.seriesPart} of the series: </p>
-                <Link href={`/series/${seriesData.slug}`} className="text-blue-600 hover:underline">
-                  {seriesData.title}
-                </Link>
-              </h3>
-              <div className="flex justify-between text-sm">
-                {postIndexInSeries > 0 ? (
+          <aside className="hidden lg:block lg:w-64 xl:w-80 flex-shrink-0">
+            {seriesData && postIndexInSeries !== -1 && (
+              <div className="my-6 p-4 border rounded bg-muted not-prose">
+                <h3 className="text-base font-semibold mb-2">
+                  <p>Part {post.seriesPart} of the series: </p>
                   <Link
-                    href={`/posts/${seriesData.posts[postIndexInSeries - 1].slug}`}
+                    href={`/series/${seriesData.slug}`}
                     className="text-blue-600 hover:underline"
                   >
-                    <span className="">&larr; Previous</span>
+                    {seriesData.title}
                   </Link>
-                ) : (
-                  <span className="opacity-50">No Previous entry</span>
-                )}
-                {postIndexInSeries < seriesData.posts.length - 1 ? (
-                  <Link
-                    href={`/posts/${seriesData.posts[postIndexInSeries + 1].slug}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    <span className="">Next &rarr;</span>
-                  </Link>
-                ) : (
-                  <span className="opacity-50">Next is not out yet!</span>
-                )}
+                </h3>
+                <div className="flex justify-between text-sm">
+                  {postIndexInSeries > 0 ? (
+                    <Link
+                      href={`/posts/${seriesData.posts[postIndexInSeries - 1].slug}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      <span className="">&larr; Previous</span>
+                    </Link>
+                  ) : (
+                    <span className="opacity-50">No Previous entry</span>
+                  )}
+                  {postIndexInSeries < seriesData.posts.length - 1 ? (
+                    <Link
+                      href={`/posts/${seriesData.posts[postIndexInSeries + 1].slug}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      <span className="">Next &rarr;</span>
+                    </Link>
+                  ) : (
+                    <span className="opacity-50">Next is not out yet!</span>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          <TableOfContents headings={headings} />
-        </aside>
+            )}
+            <TableOfContents headings={headings} />
+          </aside>
+        </div>
       </div>
-
-      <Footer />
-    </div>
+    </SiteLayout>
   );
 }

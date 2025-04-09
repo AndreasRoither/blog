@@ -1,5 +1,4 @@
 import { siteMetadata } from "@/lib/siteMetadata";
-import { Mail, Rss } from "lucide-react";
 import { GithubLinkIcon } from "./link/GithubLinkIcon";
 import { MailLinkIcon } from "./link/MailLinkIcon";
 import { RssLinkIcon } from "./link/RssLinkIcon";
@@ -20,6 +19,7 @@ export default function Footer() {
             © {new Date().getFullYear()} {siteMetadata.author}
           </span>
         </div>
+
         <ThemeToggle />
       </div>
     </footer>
