@@ -178,6 +178,8 @@ Auto generate tests with Codegen.
 - [ ] Do not regenerate sitemap if no new posts
 - [ ] Do not regenerate rss feed if no new posts
 - [ ] Do not regenerate robots.txt if no new posts
+- [ ] Change series description to use `seriesDescription` from frontmatter
+  - [ ] also custom image for series instead of image of first post
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
