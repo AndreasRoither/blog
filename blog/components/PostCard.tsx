@@ -1,5 +1,5 @@
 import type { PostMeta } from "@/model/model";
-import { Link } from "lucide-react";
+import Link from "next/link";
 
 interface PostCardProps {
   post: PostMeta;

@@ -66,7 +66,7 @@ export default async function Home() {
               </li>
             ))}
           </ul>
-          {latestPosts.length > 5 && (
+          {posts.length > 5 && (
             <div className="mt-4 text-right">
               <Link href="/posts" className="text-sm text-blue-600 hover:underline">
                 more &rarr;
