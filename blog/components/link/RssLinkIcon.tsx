@@ -12,7 +12,7 @@ export function RssLinkIcon() {
           aria-label="GitHub Profile"
           className="hover:text-primary"
         >
-          <Rss className="w-6 h-6 transition-transform duration-150 sm:h-8 sm:w-8 hover:scale-110" />
+          <Rss className="w-6 h-6 transition-transform duration-150 sm:h-7 sm:w-7 hover:scale-110" />
         </a>
       )}
     </>

@@ -9,7 +9,7 @@ export function MailLinkIcon() {
           <Mail
             height={32}
             width={32}
-            className="w-6 h-6 transition-transform duration-150 sm:h-8 sm:w-8 hover:scale-110"
+            className="w-6 h-6 transition-transform duration-150 sm:h-7 sm:w-7 hover:scale-110"
           />
         </a>
       )}
