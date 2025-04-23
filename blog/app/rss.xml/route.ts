@@ -16,7 +16,7 @@ export async function GET() {
       description: siteMetadata.description,
       site_url: siteMetadata.siteUrl,
       feed_url: `${siteMetadata.siteUrl}/rss.xml`,
-      image_url: `${siteMetadata.siteUrl}${siteMetadata.socialBanner ?? siteMetadata.siteLogo ?? ''}`,
+      image_url: `${siteMetadata.socialBanner ?? siteMetadata.siteLogo ?? ''}`,
       pubDate: new Date(),
       copyright: `© ${new Date().getFullYear()} ${siteMetadata.author}`,
       language: siteMetadata.language,
