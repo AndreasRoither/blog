@@ -1,0 +1,366 @@
+---
+title: 'Useful VSCode Settings / Extensions for Development'
+date: '2025-04-23T09:00:00+02:00'
+description: ''
+tags: ['vscode', 'settings', 'web development', 'programming']
+image: 'vscode.jpg'
+---
+
+## All about the settings
+
+Lately I have been using VSCode more and morem which required me to go and customize it to my liking.
+This has become way easier since they introduced the profile feature, which allows me to manage settings for different projects / technologies.
+
+## General Settings
+
+Let's start off with a few basic settings that I use for all my projects (some settings might be default).
+
+> These settings include some extension specific settings, you can look them up down below.
+
+```json
+{
+  "[git-commit]": {
+    "editor.rulers": [
+      72,
+      80
+    ]
+  },
+  "diffEditor.ignoreTrimWhitespace": false,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.codeActionWidget.includeNearbyQuickFixes": true,
+  "editor.copyWithSyntaxHighlighting": false,
+  "editor.fontFamily": "JetBrainsMono Nerd Font Mono",
+  "editor.fontLigatures": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit",
+    "source.sortImports": "explicit",
+    "source.addMissingImports.ts": "never" // since this might import the wrong module
+  },
+  "editor.fontSize": 13,
+  "editor.guides.bracketPairs": true,
+  "editor.guides.bracketPairsHorizontal": "active",
+  "editor.guides.highlightActiveIndentation": true,
+  "editor.inlineSuggest.enabled": true,
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "on",
+    "strings": "off"
+  },
+  "editor.linkedEditing": true,
+  "editor.minimap.maxColumn": 50,
+  "editor.minimap.renderCharacters": false,
+  "editor.minimap.size": "fit",
+  "editor.mouseWheelZoom": true,
+  "editor.suggest.localityBonus": true,
+  "editor.tabSize": 2,
+  "editor.wordBasedSuggestions": "currentDocument",
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.component.ts": "$(capture).component.html, $(capture).component.css, $(capture).component.scss, $(capture).module.ts, $(capture).component.spec.ts",
+    "*.ts": "${capture}.js, ${capture}.spec.ts, ${capture}.html"
+  },
+  "extensions.experimental.affinity": {
+    "asvetliakov.vscode-neovim": 1
+  },
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 3000,
+  "files.defaultLanguage": "${activeEditorLanguage}",
+  "files.exclude": {
+    "**/.classpath": true,
+    "**/.factorypath": true,
+    "**/.git": true,
+    "**/.project": true,
+    "**/.settings": true,
+    "**/backend/target": true
+  },
+  "git.autofetch": true,
+  "git.autofetchPeriod": 240,
+  "git.enableSmartCommit": true,
+  "git.openRepositoryInParentFolders": "always",
+  "github.copilot.enable": {
+    "*": true,
+    "markdown": false,
+    "plaintext": false,
+    "scminput": false
+  },
+  "github.copilot.chat.agent.thinkingTool": true,
+  "github.copilot.chat.editor.temporalContext.enabled": true,
+  "github.copilot.chat.generateTests.codeLens": true,
+  "github.copilot.chat.scopeSelection": true,
+  "githubPullRequests.pullBranch": "never",
+  "markdown-preview-enhanced.previewTheme": "atom-dark.css",
+  "path-intellisense.autoTriggerNextSuggestion": true,
+  "redhat.telemetry.enabled": false,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/target": true
+  },
+  "tailwindCSS.includeLanguages": {
+    "astro": "html"
+  },
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font Mono",
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.scrollback": 10000,
+  "vsicons.dontShowNewVersionMessage": true,
+  "workbench.editorAssociations": {
+    "git-rebase-todo": "gitlens.rebase"
+  },
+  "workbench.iconTheme": "vscode-icons"
+}
+```
+
+You might have noticed the different font, I enjoy a customized version of [JetBrains Mono](https://www.jetbrains.com/lp/mono/) from [Nerd Fonts](https://www.nerdfonts.com/).
+The patched version comes with a lot of icons, which I find useful for development, especially in the terminal.
+
+Together with [Starship](https://starship.rs/) I have a nice terminal experience on windows.
+
+![Image](/terminal.jpg)
+
+## Java
+
+Now for Java specific development:
+
+```json
+{
+    "java.compilation.copyAnnotations": true,
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.completion.chain.enabled": true,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.debug.settings.showStaticVariables": true,
+    "java.editor.reloadChangedSources": "auto",
+    "java.maven.downloadSources": true,
+    "java.project.resourceFilters": [
+        "node_modules", // in mono repos this annoys me a lot
+        "\\.git",
+        "target"
+    ],
+}
+```
+
+## Typescript and JavaScript
+
+And finally for Typescript and JavaScript development:
+
+
+```json
+{
+  "javascript.suggest.autoImports": true,
+  "javascript.suggest.paths": true,
+  "javascript.suggest.includeAutomaticOptionalChainCompletions": true,
+  "javascript.suggest.includeCompletionsForImportStatements": true,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.suggest.autoImports": true,
+  "typescript.suggest.paths": true,
+  "typescript.suggest.includeAutomaticOptionalChainCompletions": true,
+  "typescript.suggest.includeCompletionsForImportStatements": true,
+}
+```
+
+## Extensions
+
+Here are some extensions that I find useful for development, some of them you probably already know, but I wanted to include a full list.
+
+<details>
+
+<summary>Extensions- Click me</summary>
+
+I linked them to the marketplace -> should be easier to install
+
+- [Better Comments](https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments)
+- [ZipFS](https://marketplace.visualstudio.com/items?itemName=arcanis.vscode-zipfs)
+- [VSCode Neovim](https://marketplace.visualstudio.com/items?itemName=asvetliakov.vscode-neovim)
+- [Markdown Mermaid](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid)
+- [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)
+- [Mermaid Markdown Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=bpruitt-goddard.mermaid-markdown-syntax-highlighting)
+- [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
+- [Turbo Console Log](https://marketplace.visualstudio.com/items?itemName=chakrounanas.turbo-console-log)
+- [NPM IntelliSense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.npm-intellisense)
+- [Path IntelliSense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense)
+- [Regex](https://marketplace.visualstudio.com/items?itemName=chrmarti.regex)
+- [Package JSON Upgrade](https://marketplace.visualstudio.com/items?itemName=codeandstuff.package-json-upgrade)
+- [Gitignore](https://marketplace.visualstudio.com/items?itemName=codezombiech.gitignore)
+- [Docker](https://marketplace.visualstudio.com/items?itemName=docker.docker)
+- [Git History](https://marketplace.visualstudio.com/items?itemName=donjayamanne.githistory)
+- [XML Tools](https://marketplace.visualstudio.com/items?itemName=dotjoshjohnson.xml)
+- [GitLens](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens)
+- [EditorConfig](https://marketplace.visualstudio.com/items?itemName=editorconfig.editorconfig)
+- [Prettier - Code Formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+- [Git Project Manager](https://marketplace.visualstudio.com/items?itemName=felipecaputo.git-project-manager)
+- [Auto Close Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-close-tag)
+- [Auto Complete Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-complete-tag)
+- [Auto Rename Tag](https://marketplace.visualstudio.com/items?itemName=formulahendry.auto-rename-tag)
+- [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=github.copilot)
+- [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=github.copilot-chat)
+- [GitHub Actions](https://marketplace.visualstudio.com/items?itemName=github.vscode-github-actions)
+- [GitHub Pull Requests and Issues](https://marketplace.visualstudio.com/items?itemName=github.vscode-pull-request-github)
+- [Go](https://marketplace.visualstudio.com/items?itemName=golang.go)
+- [Excel Viewer](https://marketplace.visualstudio.com/items?itemName=grapecity.gc-excelviewer)
+- [Todo Tree](https://marketplace.visualstudio.com/items?itemName=gruntfuggly.todo-tree)
+- [Draw.io Integration](https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio)
+- [Headwind](https://marketplace.visualstudio.com/items?itemName=heybourn.headwind)
+- [Output Colorizer](https://marketplace.visualstudio.com/items?itemName=ibm.output-colorizer)
+- [Registry Editor](https://marketplace.visualstudio.com/items?itemName=ionutvmi.reg)
+- [Edit CSV](https://marketplace.visualstudio.com/items?itemName=janisdd.vscode-edit-csv)
+- [Colorize](https://marketplace.visualstudio.com/items?itemName=kamikillerto.vscode-colorize)
+- [Gutter Preview](https://marketplace.visualstudio.com/items?itemName=kisstkondoros.vscode-gutter-preview)
+- [Bash IDE](https://marketplace.visualstudio.com/items?itemName=mads-hartmann.bash-ide-vscode)
+- [Rainbow CSV](https://marketplace.visualstudio.com/items?itemName=mechatroner.rainbow-csv)
+- [Git Graph](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph)
+- [Dotenv](https://marketplace.visualstudio.com/items?itemName=mikestead.dotenv)
+- [Better Folding](https://marketplace.visualstudio.com/items?itemName=mohammadbaqer.better-folding)
+- [SCSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=mrmlnc.vscode-scss)
+- [Docker Tools](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)
+- [PostgreSQL](https://marketplace.visualstudio.com/items?itemName=ms-ossdata.vscode-postgresql)
+- [Remote - Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+- [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)
+- [Remote - SSH: Editing](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh-edit)
+- [Remote - WSL](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)
+- [Remote Extension Pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)
+- [Makefile Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.makefile-tools)
+- [Remote Explorer](https://marketplace.visualstudio.com/items?itemName=ms-vscode.remote-explorer)
+- [Remote Server](https://marketplace.visualstudio.com/items?itemName=ms-vscode.remote-server)
+- [Live Share](https://marketplace.visualstudio.com/items?itemName=ms-vsliveshare.vsliveshare)
+- [Material Icon Theme](https://marketplace.visualstudio.com/items?itemName=pkief.material-icon-theme)
+- [Quicktype](https://marketplace.visualstudio.com/items?itemName=quicktype.quicktype)
+- [XML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml)
+- [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
+- [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.liveserver)
+- [Markdown Preview Enhanced](https://marketplace.visualstudio.com/items?itemName=shd101wyy.markdown-preview-enhanced)
+- [SCSS Formatter](https://marketplace.visualstudio.com/items?itemName=sibiraj-s.vscode-scss-formatter)
+- [Auto Import](https://marketplace.visualstudio.com/items?itemName=steoates.autoimport)
+- [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
+- [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
+- [VSLook](https://marketplace.visualstudio.com/items?itemName=sudoaugustin.vslook)
+- [Snippets](https://marketplace.visualstudio.com/items?itemName=tahabasri.snippets)
+- [Even Better TOML](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
+- [MDX](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx)
+- [Error Lens](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens)
+- [Intellicode API Usage Examples](https://marketplace.visualstudio.com/items?itemName=visualstudioexptteam.intellicode-api-usage-examples)
+- [Intellicode](https://marketplace.visualstudio.com/items?itemName=visualstudioexptteam.vscodeintellicode)
+- [VSCode Icons](https://marketplace.visualstudio.com/items?itemName=vscode-icons-team.vscode-icons)
+- [Vim](https://marketplace.visualstudio.com/items?itemName=vscodevim.vim)
+- [Todo Highlight](https://marketplace.visualstudio.com/items?itemName=wayou.vscode-todo-highlight)
+- [VimL](https://marketplace.visualstudio.com/items?itemName=xadillax.viml)
+- [Pretty TS Errors](https://marketplace.visualstudio.com/items?itemName=yoavbls.pretty-ts-errors)
+- [Markdown PDF](https://marketplace.visualstudio.com/items?itemName=yzane.markdown-pdf)
+- [Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)
+- [Codesandbox Black Theme](https://marketplace.visualstudio.com/items?itemName=ziterz.codesandbox-black-theme)
+
+</details>
+
+<details>
+
+<summary>Don't want to manually install?</summary>
+
+```bash
+# Run this in your terminal
+code --install-extension aaron-bond.better-comments
+code --install-extension arcanis.vscode-zipfs
+code --install-extension asvetliakov.vscode-neovim
+code --install-extension bierner.markdown-mermaid
+code --install-extension biomejs.biome
+code --install-extension bpruitt-goddard.mermaid-markdown-syntax-highlighting
+code --install-extension bradlc.vscode-tailwindcss
+code --install-extension chakrounanas.turbo-console-log
+code --install-extension christian-kohler.npm-intellisense
+code --install-extension christian-kohler.path-intellisense
+code --install-extension chrmarti.regex
+code --install-extension codeandstuff.package-json-upgrade
+code --install-extension codezombiech.gitignore
+code --install-extension docker.docker
+code --install-extension donjayamanne.githistory
+code --install-extension dotjoshjohnson.xml
+code --install-extension eamodio.gitlens
+code --install-extension editorconfig.editorconfig
+code --install-extension esbenp.prettier-vscode
+code --install-extension felipecaputo.git-project-manager
+code --install-extension formulahendry.auto-close-tag
+code --install-extension formulahendry.auto-complete-tag
+code --install-extension formulahendry.auto-rename-tag
+code --install-extension github.copilot
+code --install-extension github.copilot-chat
+code --install-extension github.vscode-github-actions
+code --install-extension github.vscode-pull-request-github
+code --install-extension golang.go
+code --install-extension grapecity.gc-excelviewer
+code --install-extension gruntfuggly.todo-tree
+code --install-extension hediet.vscode-drawio
+code --install-extension heybourn.headwind
+code --install-extension ibm.output-colorizer
+code --install-extension ionutvmi.reg
+code --install-extension janisdd.vscode-edit-csv
+code --install-extension kamikillerto.vscode-colorize
+code --install-extension kisstkondoros.vscode-gutter-preview
+code --install-extension mads-hartmann.bash-ide-vscode
+code --install-extension mechatroner.rainbow-csv
+code --install-extension mhutchie.git-graph
+code --install-extension mikestead.dotenv
+code --install-extension mohammadbaqer.better-folding
+code --install-extension mrmlnc.vscode-scss
+code --install-extension ms-azuretools.vscode-docker
+code --install-extension ms-ossdata.vscode-postgresql
+code --install-extension ms-vscode-remote.remote-containers
+code --install-extension ms-vscode-remote.remote-ssh
+code --install-extension ms-vscode-remote.remote-ssh-edit
+code --install-extension ms-vscode-remote.remote-wsl
+code --install-extension ms-vscode-remote.vscode-remote-extensionpack
+code --install-extension ms-vscode.makefile-tools
+code --install-extension ms-vscode.remote-explorer
+code --install-extension ms-vscode.remote-server
+code --install-extension ms-vsliveshare.vsliveshare
+code --install-extension pkief.material-icon-theme
+code --install-extension quicktype.quicktype
+code --install-extension redhat.vscode-xml
+code --install-extension redhat.vscode-yaml
+code --install-extension ritwickdey.liveserver
+code --install-extension shd101wyy.markdown-preview-enhanced
+code --install-extension sibiraj-s.vscode-scss-formatter
+code --install-extension steoates.autoimport
+code --install-extension streetsidesoftware.code-spell-checker
+code --install-extension stylelint.vscode-stylelint
+code --install-extension sudoaugustin.vslook
+code --install-extension tahabasri.snippets
+code --install-extension tamasfe.even-better-toml
+code --install-extension unifiedjs.vscode-mdx
+code --install-extension usernamehw.errorlens
+code --install-extension visualstudioexptteam.intellicode-api-usage-examples
+code --install-extension visualstudioexptteam.vscodeintellicode
+code --install-extension vscode-icons-team.vscode-icons
+code --install-extension vscodevim.vim
+code --install-extension wayou.vscode-todo-highlight
+code --install-extension xadillax.viml
+code --install-extension yoavbls.pretty-ts-errors
+code --install-extension yzane.markdown-pdf
+code --install-extension yzhang.markdown-all-in-one
+code --install-extension ziterz.codesandbox-black-theme
+```
+
+</details>
+
+Now if you have a powerful pc, you can use all of these extensions at once, but if you are like me and have a laptop with limited resources, you might want to disable some of them.
+
+This is where the profiles come in handy, you can create a profile for each project and only enable the extensions you need for that project.
+
+To see all the profiles you have, you can go to the command palette <span className='text-nowrap'>`Ctrl + Shift + P`</span> and type <span className='text-nowrap'>`Preferences: Open Profiles (UI)`</span>.
+
+![Image](/vscode_command_profile.jpg)
+
+I'd recommend installing general extensions for the default profile like icons and themes, and then copy from there to your project specific profiles.
+
+![Image](/vscode_profiles.jpg)
+
+
+That's all for now—hopefully, you found this post helpful and discovered some extensions you weren't aware of.
+
+<div className="w-full relative mt-12 mb-8 rounded-xl bg-gradient-to-r from-green-700 via-lime-600 to-emerald-500 p-1 shadow-xl">
+    <div className="rounded-lg bg-green-950 p-8 text-center">
+        <h3 className="mb-2 text-2xl font-bold text-white">Thank you for reading and have a nice 🍵❤️</h3>
+    </div>
+</div>
