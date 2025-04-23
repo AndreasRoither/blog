@@ -6,7 +6,11 @@ export function MailLinkIcon() {
     <>
       {siteMetadata.github && (
         <a href={`mailto:${siteMetadata.email}`} aria-label="Email" className="hover:text-primary">
-          <Mail width={32} className="hover:scale-110 transition-transform duration-150" />
+          <Mail
+            height={32}
+            width={32}
+            className="w-6 h-6 transition-transform duration-150 sm:h-8 sm:w-8 hover:scale-110"
+          />
         </a>
       )}
     </>

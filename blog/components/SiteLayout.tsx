@@ -30,27 +30,27 @@ const Header = () => {
         visible ? "translate-y-0" : "-translate-y-full"
       }`}
     >
-      <nav className="container mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="font-bold text-lg">
+      <nav className="container flex items-center justify-between px-4 mx-auto h-14">
+        <Link href="/" className="text-lg font-bold">
           {siteMetadata.headerTitle || siteMetadata.title}
         </Link>
         <div className="flex items-center space-x-4 text-sm font-medium">
-          <Link href="/" className="text-muted-foreground transition-colors hover:text-foreground">
+          <Link href="/" className="hidden transition-colors text-muted-foreground hover:text-foreground sm:block">
             Home
           </Link>
           <Link
             href="/posts"
-            className="text-muted-foreground transition-colors hover:text-foreground"
+            className="transition-colors text-muted-foreground hover:text-foreground"
           >
             Posts
           </Link>
           <Link
             href="/series"
-            className="text-muted-foreground transition-colors hover:text-foreground"
+            className="transition-colors text-muted-foreground hover:text-foreground"
           >
             Series
           </Link>
-          <ThemeToggle />
+          <ThemeToggle className="hidden md:block"/>
         </div>
       </nav>
     </header>

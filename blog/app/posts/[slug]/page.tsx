@@ -159,7 +159,7 @@ export default async function PostPage({ params }: PostPageProps) {
             </Link>
           </div>
 
-          <article className="flex-grow max-w-3xl w-full lg:w-auto">
+          <article className="flex-grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-3xl w-full lg:w-auto">
             {" "}
             <Link
               href="/"
@@ -168,7 +168,7 @@ export default async function PostPage({ params }: PostPageProps) {
               ← cd ..
             </Link>
             <header className="mb-8">
-              <h1 className="text-6xl font-bold">
+              <h1 className="text-xl lg:text-4xl xl:text-5xl font-bold">
                 {draft && <span className="text-yellow-500 mr-2">[DRAFT]</span>}
                 {title}
               </h1>
