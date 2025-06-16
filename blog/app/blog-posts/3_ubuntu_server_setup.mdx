@@ -1,0 +1,933 @@
+---
+title: 'Ubuntu 24.04.2 LTS Server Setup'
+date: '2025-06-15T09:00:00+02:00'
+description: 'Setting up a new Ubuntu 24.04.2 LTS server and configuring essential tools and services'
+tags: ['ubuntu', 'server', 'setup']
+image: 'birb_1.jpg'
+---
+
+## Ubuntu Server Setup
+
+This week I have set up a new Ubuntu server for some projects I am working on. While writing some notes about the setup, I thought it might be useful to share them here.
+
+A few reminders before we start:
+> **This is not a comprehensive guide**: This post is more of a collection of my personal notes and preferences. It may not cover every aspect of setting up an Ubuntu server, but it should give you a good starting point.
+
+> Run commands with caution: Always be careful when running commands with `sudo`, especially those that modify system files or install software. Double-check commands before executing them.
+> If you are not sure about a command, use websites like [ExplainShell](https://explainshell.com/) to understand what it does.
+> I am not responsible for any issues that may arise from following this guide. Use it at your own risk.
+
+At the bottom of this post, I will also share some useful resources and links to documentation that I found helpful during the setup process.
+
+## Initial Setup
+
+- **Install Ubuntu Server**: Download the latest [Ubuntu Server ISO](https://releases.ubuntu.com/) and create a bootable USB drive. There are plenty of guides available online for this step.
+- **Update the System**: After installation, run the following commands to update the package list and upgrade installed packages:
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   ```
+- **Install Essential Packages**: some essential packages that I always find useful:
+   ```bash
+    sudo apt install -y build-essential curl wget git vim unattended-upgrades apt-listchanges apticron mailutils software-properties-common zsh fzf zoxide bat
+    ```
+
+- (Optional) **Install [Nala Package Manager](https://github.com/volitank/nala)**: Nala is a front-end for APT that provides a more user-friendly interface and better output formatting. It can be installed with:
+   ```bash
+   sudo apt install -y nala
+   sudo nala fetch --auto -y # Fetch faster mirrors
+
+   # Use nala for subsequent updates/upgrades
+   sudo nala update && sudo nala upgrade -y
+   ```
+
+## User Management
+
+Now per default, your Ubuntu server will have a root user with full privileges. It's a good practice to create a new user with `sudo` privileges and disable root login for security reasons.
+
+
+```bash
+USERNAME="anro"
+
+# Create the new user
+sudo adduser $USERNAME
+
+# Add the user to the 'sudo' group to grant administrative privileges
+sudo usermod -aG sudo $USERNAME
+
+# Switch to the new user
+# The hyphen (-) ensures you get the new user's full environment/profile
+su - $USERNAME 
+```
+
+> **Note**: Make sure to replace `anro` with your desired username. From this point on, perform all actions as the new user (`anro` here), using `sudo` when necessary.
+
+
+## Shell Configuration
+
+I like to use ZSH or starhsip as my shell and set them up with some useful plugins and themes. You can try both here and pick which ever you like.
+
+### Starship
+
+Starship installation is straightforward, and you can find the instructions on their [official website](https://starship.rs/).
+
+```bash
+curl -sS https://starship.rs/install.sh | sh
+```
+
+After installation, you can configure Starship by creating a configuration file:
+
+```bash
+mkdir -p ~/.config && touch ~/.config/starship.toml
+```
+You can then edit this file to customize your prompt. Their official documentation provides a lot of examples and options for customization: [Starship Presets](https://starship.rs/presets/).
+If you use Nerd Fonts on your system, I'd recommend sticking to the [Nerd Font Symbols Preset](https://starship.rs/presets/nerd-font).
+
+### ZSH
+
+
+Earlier we already installed ZSH, I mainly use it together with [oh my zsh](https://ohmyz.sh/), so now we can set it as the default shell for our user (but you do you and use whatever you prefer):
+```bash
+# Oh My Zsh installation (offers a lot of plugins and themes and is highly customizable)
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+git clone https://github.com/zsh-users/zsh-autosuggestions.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/zsh-syntax-highlighting
+```
+
+The two plugins `zsh-autosuggestions` and `zsh-syntax-highlighting` are nice as they provide command suggestions and syntax highlighting.
+
+Let's configure the `.zshrc` file:
+
+```bash
+nano ~/.zshrc
+```
+
+Add the following lines to the file:
+
+```bash
+export ZSH="/home/anro/.oh-my-zsh"
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+ZSH_THEME="agnoster"
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(
+    git
+    golang
+    docker
+    docker-compose
+    vscode
+    dotenv
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+    sudo
+    copypath
+    dirhistory
+    history
+    git-auto-fetch
+    git-prompt
+    gitignore
+    zsh-interactive-cd
+    fzf
+)
+
+source $ZSH/oh-my-zsh.sh
+
+# Load Git completion
+zstyle ':completion:*:*:git:*' script ~/.zsh/git-completion.bash
+fpath=(~/.zsh $fpath)
+autoload -Uz compinit && compinit
+
+# https://blog.meain.io/2019/automatically-ls-after-cd/
+# I like to automatically list the contents of a directory after changing into it.
+function list_all() {
+  emulate -L zsh
+  ls
+}
+if [[ ${chpwd_functions[(r)list_all]} != "list_all" ]];then
+  chpwd_functions=(${chpwd_functions[@]} "list_all")
+fi
+
+# Enable fzf keybindings & fuzzy completion
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Enable zoxide (add after compinit)
+eval "$(zoxide init zsh)"
+
+# Enable bat as pager/cat replacement (optional)
+export PAGER="bat"
+alias bcat='bat --paging=never'
+```
+
+If you have your own aliases or functions, you can add them to the `.zshrc` file as well: 
+
+```bash
+if [ -f ~/.aliases ]; then
+. ~/.aliases
+fi
+```
+
+Here are a couple of mine:
+
+```bash
+# .alises
+
+# ----------------------
+# General
+# ----------------------
+# Alias's for multiple directory listing commands
+alias lt='ls --human-readable --size -1 -S --classify' # list by size and append indicators
+alias la='ls -Alh'                # show hidden files
+alias ls='ls -aFh --color=always' # add colors and file type extensions
+alias lx='ls -lXBh'               # sort by extension
+alias lk='ls -lSrh'               # sort by size
+alias lc='ls -lcrh'               # sort by change time
+alias lu='ls -lurh'               # sort by access time
+alias lr='ls -lRh'                # recursive ls
+alias lt='ls -ltrh'               # sort by date
+alias lm='ls -alh | more'         # pipe through 'more'
+alias lw='ls -xAh'                # wide listing format
+alias ll='ls -Fls'                # long listing format
+alias labc='ls -lap'              # alphabetical sort
+alias lf="ls -l | egrep -v '^d'"  # files only
+alias ldir="ls -l | egrep '^d'"   # directories only
+
+# Search command line history
+alias h="history | grep "
+```
+
+Maybe I'll write a more detailed post about my `.aliases` setup in the future, but for now, this should get you started.
+
+
+Now let's reload our shell configuration:
+
+```bash
+source ~/.zshrc
+```
+
+## Update permissions for sensitive files
+
+After setting up your user and shell, it's a good idea to update the permissions for sensitive files to ensure that only your user can read them:
+
+```bash
+# Contains hashed user passwords. Should only be readable/writable by root.
+sudo chmod 600 /etc/shadow
+
+# Contains hashed group passwords. Should only be readable/writable by root.
+sudo chmod 600 /etc/gshadow
+
+# Contains user account information. Should be readable by all, writable only by root.
+sudo chmod 644 /etc/passwd
+
+# Contains group information. Should be readable by all, writable only by root.
+sudo chmod 644 /etc/group
+```
+Explanation:
+> * `chmod 600`: Owner has read and write permissions (`rw-------`). Only root can access `/etc/shadow` and `/etc/gshadow`.
+> * `chmod 644`: Owner has read/write, group has read, others have read (`rw-r--r--`). Allows users and services to look up user/group information but not modify it.
+
+> **Note:** These permissions are standard for Ubuntu and most Linux distributions (but if you are new, it's good to know about). Do not make them *less* restrictive unless you have a very specific, understood reason. 
+
+
+## SSH
+
+To connect to your server securely, you should set up SSH (Secure Shell). This allows you to log in remotely and execute commands securely. You probably already logged in via SSH during the initial setup, now it's time to configure it.
+
+### SSH Setup and Key Management
+
+Upload your SSH public key to the server. If you don't have one create one on your *local* machine (not the server) using the following command:
+```bash
+# Follow the prompts (accept default file location)
+ssh-keygen -t ed25519 -C "yourmail@mail.com"
+```
+
+**(Optional) Load the key into the SSH agent** on your *local* machine for convenience.
+```bash
+# Run this on your local computer
+ssh-add ~/.ssh/id_ed25519 # Or the path to your private key
+```
+
+**Copy the public key to the server:** Use `ssh-copy-id` from your *local* machine.
+```bash
+# Should show authorized_keys
+ls -la ~/.ssh
+
+# Set permissions, in case they are not set correctly from windows etc.
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+```
+
+### SSH Configuration
+
+
+**CRITICAL:** Ensure you have successfully set up SSH key authentication for your user *before* disabling password authentication in the configuration below. 
+Test login from a *new* terminal window before closing your current session.
+
+Let's start by editing the SSH daemon configuration file:
+```bash
+# Backup the original SSH daemon configuration
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak.$(date +"%Y%m%d%H%M%S")
+
+# Edit the SSH daemon configuration
+sudo nano /etc/ssh/sshd_config
+```
+
+Modify or add the following lines. Lines starting with `#` are comments.
+
+
+```bash
+# Set a non-standard port (e.g., 2222). Remember to allow this in the firewall!
+# Port 2222
+
+# Disable root login entirely
+PermitRootLogin no
+
+# Enforce public key authentication (MOST IMPORTANT)
+AuthenticationMethods publickey
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+
+# Disable empty passwords
+PermitEmptyPasswords no
+
+# Use PAM for other system integrations (like 2FA, sudo integration)
+UsePAM yes
+
+# Disable X11 Forwarding if not needed (typically not on servers)
+X11Forwarding no
+
+# Limit users/groups allowed to SSH (replace anro with your user/group)
+# AllowUsers anro anotheruser
+# AllowGroups ssh-access-group
+
+# Set idle timeouts (e.g., disconnect after 15 mins idle)
+ClientAliveInterval 300
+ClientAliveCountMax 3
+
+# Limit concurrent unauthenticated connections
+MaxStartups 10:30:100
+
+# Specify strong Key Exchange algorithms, Ciphers, and MACs 
+# always check current recommendations
+
+# Log more details
+LogLevel VERBOSE
+```
+
+These settings enhance security by:
+- Disabling root login to prevent brute-force attacks.
+- Enforcing public key authentication, which is more secure than passwords.
+- Disabling password authentication to prevent unauthorized access.
+- Setting idle timeouts to disconnect inactive sessions, reducing the risk of unauthorized access.
+- Limiting the number of unauthenticated connections to prevent DoS attacks.
+- Logging more details to help with auditing and troubleshooting.
+
+
+After saving the changes, test your changes. If it reports errors, fix them in /etc/ssh/sshd_config and test again (If it shows no output or just returns, the syntax is okay):
+```bash
+# Test the new configuration for syntax errors
+sudo sshd -t
+
+# Restart the SSH service to apply changes
+sudo service ssh restart
+```
+
+Now you can connect to your server using SSH with your public key authentication.
+
+```bash
+ssh anro@yourdomainorip.com 
+# (or ssh -p <NewPort> anro@yourdomainorip.com)
+```
+
+## Firewall Configuration
+
+To secure your server, it's essential to configure a firewall. You can use `ufw` (Uncomplicated Firewall), which makes it easy to manage firewall rules.
+It provides a user-friendly interface to the underlying `iptables` firewall.
+
+Let's set up `ufw`:
+```bash
+# Install UFW if not already present
+sudo nala install -y ufw
+
+# Set default policies: deny all incoming, allow all outgoing
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# Allow essential ports (adjust SSH port if you changed it from 22)
+sudo ufw limit ssh # Rate-limits connections on port 22
+# If using a custom SSH port (e.g., 2222):
+# sudo ufw limit 2222/tcp
+
+sudo ufw allow http  # Port 80/tcp
+sudo ufw allow https # Port 443/tcp
+
+# Allow other necessary ports (e.g., for databases, specific apps)
+# sudo ufw allow 5432/tcp # Example: PostgreSQL
+
+# Enable UFW logging (logs to /var/log/ufw.log)
+sudo ufw logging on
+
+# Enable the firewall
+sudo ufw enable # Answer 'y' to proceed
+
+# Check the status
+sudo ufw status verbose
+```
+
+This configuration ensures that:
+- All incoming connections are denied by default.
+- Outgoing connections are allowed, so your server can access the internet.
+- SSH connections are rate-limited to prevent brute-force attacks.
+- `HTTP` and `HTTPS` traffic is allowed, enabling web services.
+
+UFW will play an important role in protecting your server from unauthorized access and attacks. Together with `fail2ban`, it provides a robust security layer.
+
+## Fail2Ban
+
+Fail2Ban is a log scanning tool that helps protect your server from brute-force attacks by monitoring log files and banning IP addresses that show malicious signs.
+
+```bash
+# Install Fail2ban
+sudo nala install -y fail2ban
+
+# Create a local configuration file (overrides defaults in jail.conf)
+# NEVER edit jail.conf directly, as updates can overwrite it.
+# Create a local configuration file to customize settings:
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+
+# Edit the local configuration
+sudo nano /etc/fail2ban/jail.local
+```
+
+Now change the configuration to suit your needs. Here are some of my recommended settings:
+
+```ini
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = %(sshd_log)s
+maxretry = 3
+bantime = 4w
+findtime = 5d
+banaction = ufw
+```
+I purposely set a long `bantime` of 4 weeks and a `findtime` of 5 days, which means if an IP fails to authenticate 3 times within 5 days, it will be banned for 4 weeks. 
+This is quite strict but effective against persistent attackers. Depending on your use case, you might want to go stricter or more lenient.
+
+Now these settings are pretty self-explanatory, but here are some explanations for the most important settings:
+- **`[DEFAULT]` section:**
+  - `bantime`: How long an IP is banned (e.g., `1h` = 1 hour, `1d` = 1 day, `4w` = 4 weeks). Default is often 10 minutes. `-1` for permanent.
+  - `findtime`: Window during which failures must occur to trigger a ban (e.g., `10m`, `1h`, `5d`).
+  - `maxretry`: Number of failures within `findtime` before banning. `3` is strict, `5` is common.
+  - `destemail`: Your email address for notifications (if `action` includes email). Requires a working mail setup on the server.
+  - `sender`: Email sender address used for notifications.
+  - `banaction`: The firewall action used for banning. We use `ufw`.
+  - `action`: Default action taken when banning. Common options:
+    - `%(action_)s`: Ban only.
+    - `%(action_mw)s`: Ban and send email with whois report.
+    - `%(action_mwl)s`: Ban and send email with whois report and relevant log lines. (Requires `destemail` to be set).
+- **`[sshd]` section:**
+  - `port`: Check this matches your SSH port (e.g., `port = ssh` which defaults to 22).
+  - `filter`: Usually `sshd`, refers to filter rules in `/etc/fail2ban/filter.d/`.
+  - `logpath`: Usually `%(sshd_log)s` which finds the SSH log file automatically (e.g., `/var/log/auth.log`).
+  - `maxretry`, `findtime`, `banaction`,`bantime`: Can be set here to override `[DEFAULT]` specifically for SSH.
+
+I mostly use the ssh jail, but you can enable others as well (Nginx, Apache), mail servers, etc., find their sections and set `enabled = true`.
+
+
+Now start and enable Fail2ban:
+
+```bash
+# Enable and start Fail2ban service
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+
+# Check the status (specifically for the sshd jail)
+sudo fail2ban-client status sshd
+```
+
+### Some useful commands for Fail2Ban
+
+- To check the status of all jails:
+  ```bash
+  sudo fail2ban-client status
+  ```
+- If you need to reload the configuration:
+  ```bash
+  sudo fail2ban-client reload
+  ```
+- To unban an IP:
+  ```bash
+  sudo fail2ban-client set sshd unbanip <IP_ADDRESS>
+  ```
+- To check the logs:
+  ```bash
+  sudo tail -f /var/log/fail2ban.log
+  ```
+- Check the service log being monitored (e.g., for SSH): 
+  ```bash
+  sudo grep 'Failed password' /var/log/auth.log | tail
+  ```
+
+## Automated Security Updates
+
+To keep your server secure, it's crucial to enable security updates. This ensures that critical security patches are applied without manual intervention.
+This might not fit your use case, but I find it very useful to have security updates automatically applied when I don't have time to manually check for updates.
+
+```bash
+# The 'unattended-upgrades' package should already be installed.
+# Run the configuration tool to enable automatic updates
+sudo dpkg-reconfigure -plow unattended-upgrades
+# Select '<Yes>' when prompted to enable automatic downloads and installation.
+
+# Fine-tune configuration (optional)
+# sudo nano /etc/apt/apt.conf.d/50unattended-upgrades
+```
+
+Inside `50unattended-upgrades`, review and uncomment/adjust:
+
+- Ensure the `"${distro_id}:${distro_codename}-security";` line is uncommented.
+- Consider uncommenting `"${distro_id}:${distro_codename}-updates";` if you want non-security updates too (use with caution on production).
+- `Unattended-Upgrade::Mail "your_email@example.com";` (Set your email for notifications).
+- `Unattended-Upgrade::Automatic-Reboot "false";` (Set to `true` if you want automatic reboots when needed, generally `false` is safer for servers).
+- `Unattended-Upgrade::Remove-Unused-Dependencies "true";` (Good practice).
+
+(Optional) Configure email notifications for package changes (apt-listchanges)
+
+```bash
+# Select 'mail', enter your email address. Select none to disable the pager.
+sudo dpkg-reconfigure apt-listchanges
+```
+
+
+## AppArmor/SELinux
+
+AppArmor is a mandatory access control (MAC) system that restricts programs' capabilities with per-program profiles. 
+It is enabled by default on Ubuntu. 
+
+
+```bash
+# Install AppArmor utilities (might already be installed)
+sudo nala install -y apparmor-utils
+
+# Check the current AppArmor status
+# Look for loaded profiles and whether they are in 'enforce' or 'complain' mode.
+sudo aa-status # or sudo apparmor_status
+```
+
+AppArmor comes with two modes for profiles:
+- Complaining/Learning: logs policy violations but does not enforce them. Used for testing and learning.
+- Enforced/Confined: actively restricts program capabilities based on the profile and logs violations.
+
+Production ready profiles are usually packaged by the distribution, but you can create your own profiles for custom applications or services.
+As we are using Ubuntu, most common applications already have profiles available.
+
+For Red Hat based systems, [SELinux](https://www.redhat.com/en/topics/linux/what-is-selinux) is the equivalent system.
+
+## Malware / Rootkit Scanning
+
+It's always a good idea to scan your server for malware or rootkits, especially if you are running web applications or services that are exposed to the internet.
+
+### Lynis
+
+Lynis is a security auditing tool for Unix-based systems. It performs security scans and provides recommendations for hardening your system.
+
+```bash
+# Install Lynis
+sudo nala install -y lynis
+
+# Run an initial system audit (this will take several minutes)
+# Lynis performs checks across various categories (boot, kernel, users, networking, crypto, etc.)
+sudo lynis audit system
+```
+
+After the scan, Lynis will provide a report with findings and recommendations. 
+It categorizes issues by severity (e.g., "warning", "suggestion", "info") and provides links to documentation for each finding.
+Re-run `lynis audit system` periodically (e.g., weekly or monthly via cron) to check your hardening progress.
+
+> **Note:** Lynis is an *auditing* tool; it identifies **potential** issues and suggests improvements but does not automatically fix them. 
+> You need to implement the relevant recommendations based on **your** server's role and security requirements. 
+
+
+### Rootkit Scanners
+
+There are several rootkit scanners available for Linux, but two of the most popular ones are `rkhunter` and `chkrootkit`.
+
+> **Note** `chkrrootkit` is a very old tool and not actively maintained, so we won't install it.
+
+Let's install `rkhunter`:
+```bash
+sudo nala install -y rkhunter
+
+# Update rkhunter definitions and initialize file properties database
+sudo rkhunter --update
+sudo rkhunter --propupd
+
+# Run initial scans manually to check for immediate issues and understand the output.
+# Be prepared for potential *false positives*, especially on the first run.
+# Investigate any warnings carefully before assuming they are malicious.
+echo "Running initial rkhunter check (press Enter after reviewing sections)..."
+sudo rkhunter --check
+```
+
+> `rkhunter` may flag legitimate files or configurations as suspicious (false positives), especially custom scripts, updated software, or unusual configurations.
+> Carefully research any warnings using the information provided by the scanner.
+> If you confirm a warning is a false positive, you can whitelist it in `rkhunter`'s configuration file (`/etc/rkhunter.conf` or `/etc/rkhunter.conf.local`).
+
+
+**Scheduling Regular Scans:**
+It's important to run these scans regularly. This can be done via a cron job (see the "Automated Maintenance & Security Scanning" section later in this guide for an example script).
+
+## System Auditing
+
+Now we are really deep into the security and maintenance of our server but there are still more tools to setup!
+This brings me to `auditd`, which is a powerful tool that can help you monitor system events and changes.
+
+```bash
+# Install auditd for system auditing
+sudo apt install -y auditd audispd-plugins
+
+# Configure basic audit rules
+sudo tee /etc/audit/rules.d/audit.rules > /dev/null << EOT
+
+# Increase buffer size (adjust as needed, default might be too small for busy systems)
+# -b 8192
+
+# Monitor for unauthorized access attempts to files
+-a always,exit -F arch=b64 -S open,openat,openat2 -F dir=/etc -F success=0 -k access
+-a always,exit -F arch=b64 -S open,openat,openat2 -F dir=/etc/sudoers.d/ -k sudoers
+-a always,exit -F arch=b64 -S open,openat,openat2 -F path=/etc/passwd -k passwd
+-w /etc/shadow -p wa -k shadow
+-w /etc/group -p wa -k group
+
+# Monitor changes to system authentication settings
+-w /etc/pam.d/ -p wa -k pam
+-w /etc/nsswitch.conf -p wa -k nsswitch
+
+# Monitor ssh changes
+-w /etc/ssh/sshd_config -p wa -k ssh_config
+-w /root/.ssh -p wa -k ssh_keys
+
+# Monitor commands run by users with admin privileges
+-a exit,always -F arch=b64 -F euid=0 -S execve -k sudo_commands
+
+# Monitor login/logout events, in my case I don't need it since I use SSH keys that are password protected
+# -w /var/log/faillog -p wa -k logins_failed
+# -w /var/log/lastlog -p wa -k logins_recorded
+# -w /var/run/utmp -p wa -k logins_sessions # Might be noisy
+EOT
+
+# Enable and start auditd
+sudo systemctl enable auditd
+sudo systemctl restart auditd # or start if not already running
+sudo systemctl status auditd
+```
+
+Now there are quite a few rules, here is what they do:
+- **Buffer Size**: Increase the buffer size to handle more events without dropping them.
+  - `-b` Set the buffer size (e.g., `-b 8192`). Prevents audit record loss on busy systems
+- **File Access Monitoring**: Monitor access to critical files like `/etc`, `/etc/sudoers.d/`, `/etc/passwd`, `/etc/shadow`, and `/etc/group`. This helps detect unauthorized access attempts.
+  - **`-a always,exit -F arch=b64 -S open -F dir=/etc -F success=0 -k access`**:
+    - `-a` always,exit: Add rule that triggers on syscall exit
+    - `-F` arch=b64: Filter for 64-bit architecture only
+    - `-S` open,openat,openat2: Monitor file open system calls
+    - `-F` dir=/etc: Only monitor /etc directory
+    - `-F` success=0: Only log failed access attempts
+    - `-k` access: Tag with "access" key for searching
+- **Authentication Settings**: Monitor changes to PAM configuration files and the Name Service Switch configuration (`/etc/nsswitch.conf`).
+  - **`-w /etc/pam.d/ -p wa -k pam`**:
+    -Monitors changes to PAM (authentication) configuration
+  - **`-w /etc/nsswitch.conf -p wa -k nsswitch`**: 
+    - Tracks NSS (name service switch) modifications
+- **SSH Configuration**: Monitor changes to the SSH daemon configuration file (`/etc/ssh/sshd_config`) and the root user's SSH keys.
+- **Admin Commands**: Monitor commands run by users with admin privileges (UID 0). This helps track potentially malicious activity.
+  - **`-a exit,always -F arch=b64 -F euid=0 -S execve -k sudo_commands`**:
+    - `-F` euid=0: Only monitor commands run as root (UID 0)
+    - `-S` execve: Monitor program execution
+- **Login/Logout Events**: Optionally monitor login/logout events (commented out here, but can be enabled if needed).
+
+
+That's a lot but will monitor most of your important files. Now you can check the audit logs using the `ausearch` command:
+
+```bash
+# Search for events using the defined keys
+sudo ausearch -k access_denied | tail # Show recent permission denials
+sudo ausearch -k shadow_changes
+sudo ausearch -k root_commands | tail # Show recent commands run as root
+
+# Generate summary reports
+sudo aureport --summary # Overall summary
+sudo aureport -l --summary # Login summary
+sudo aureport -k --summary # Summary by audit key
+
+# View the raw log file (can be very verbose)
+sudo tail -f /var/log/audit/audit.log
+```
+> **Note on Log Volume:** Auditd can generate significant log data, especially with rules like `root_commands`. 
+> Ensure you have adequate disk space and configure log rotation for `/var/log/audit/audit.log` (e.g., using `/etc/logrotate.d/auditd`).
+
+## Logwatch
+
+Logwatch parses system logs for a given period and generates a summary report, highlighting potential issues or notable events. 
+This can make log monitoring more manageable.
+
+```bash
+# Install Logwatch
+sudo nala install -y logwatch
+
+# Create/edit a local configuration file to override defaults:
+sudo nano /etc/logwatch/conf/logwatch.conf
+```
+
+Add the following lines to customize the report:
+
+```ini
+# Mail destination
+MailTo = yourmail@mail.com
+
+# Sender address
+MailFrom = logwatch@yourhostname
+
+# How much detail
+Detail = Low # (Or Med, High)
+
+# Time range (default is 'yesterday') Use 'All' for testing, 'yesterday' for daily cron
+Range = yesterday
+
+# Default output format. 'mail' or 'stdout'.
+# Requires a working mail system (e.g., Postfix, ssmtp)
+Output = mail 
+
+# Format (text or html)
+Format = html
+
+# Save the report to a file instead of mailing/printing.
+# Filename = /tmp/logwatch
+
+# Use archives (rotated log files) in addition to current logs.
+Archives = Yes
+
+# Set the hostname for the report title.
+Hostname = "`hostname -f`" # Uses the server's FQDN
+```
+
+Logwatch can be run once a day by the cron script `/etc/cron.daily/00logwatch`. 
+
+Create a new script:
+```bash
+sudo nano /etc/cron.daily/00logwatch
+```
+
+And the following content to run Logwatch daily:
+```bash
+# Run for yesterday (uses settings from logwatch.conf, outputs to stdout)
+sudo logwatch --range yesterday --output stdout --detail Low
+
+# Run for today, force HTML format, email to specific address (overrides config)
+# sudo logwatch --range today --format html --mailto anrodev@proton.me --detail Med
+```
+
+To make it weekly, move the script from `cron.daily` to `cron.weekly` and adjust the `Range` if desired (though running daily and just *reading* weekly might be simpler).
+
+> **(Optional) Centralized Logging:** For managing logs from multiple servers, consider tools like Graylog, Loki, ELK stack (Elasticsearch, Logstash, Kibana), or Splunk. 
+
+
+
+## Automated Maintenance & Security Scanning (Cron)
+
+We have set up various security measures, but it's also important to automate regular maintenance tasks to keep your server healthy and secure.
+Schedule regular tasks like package cleanup, security scans, and status checks using `cron`, the standard Linux task scheduler. 
+The script below is an example of a weekly maintenance and security scan script that you can customize to fit your needs.
+
+Create a script file in the `/etc/cron.weekly` directory, which runs automatically once a week (usually early Sunday morning):
+
+```bash
+sudo nano /etc/cron.weekly/custom-maintenance-security
+```
+
+Add the following content:
+```bash
+#!/bin/bash
+
+# Ensure standard paths are available
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+# --- Configuration ---
+MAILTO="yourmail@mail.com"
+HOSTNAME=$(hostname -f)
+
+LOGFILE="/var/log/custom_maintenance.log"
+
+# --- Script Start ---
+# Create log files if they don't exist and set permissions
+touch $LOGFILE
+chown root:root $LOGFILE
+chmod 640 $LOGFILE
+
+# Clear logs for this run (or use '>>' instead of '>' to append)
+truncate -s 0 $LOGFILE
+
+# Redirect all stdout to LOGFILE and stderr to ERRORLOG
+exec >> "$LOGFILE" 2>&1
+
+echo "=== Starting Weekly Maintenance & Security Scan on $HOSTNAME @ $(date) ==="
+
+# 1. System Update Check
+# Just checks for available updates, doesn't install them here.
+# relies on unattended-upgrades or manual updates for installation.
+echo -e "\n--- Running System Update Check ---"
+apt-get update
+
+# 2. Clean Up Packages
+echo -e "\n--- Cleaning Up Packages ---"
+# Remove automatically installed dependencies that are no longer needed
+apt-get autoremove -y
+# Clean up downloaded package files (.deb) from the cache
+apt-get clean
+nala clean
+
+# 3. Run Rootkit Scanners (configured for cron)
+echo -e "\n--- Running rkhunter ---"
+rkhunter --check --cronjob --report-warnings-only
+
+# 4. Run Lynis Audit (quietly, appends to log)
+echo -e "\n--- Running Lynis Audit ---"
+lynis audit system --cronjob
+
+# 5. Check UFW Status
+echo -e "\n--- Checking UFW Status ---"
+ufw status verbose
+
+# 6. Check Fail2ban Status
+echo -e "\n--- Checking Fail2ban Status ---"
+fail2ban-client status
+echo -e "\n--- Checking Fail2ban SSHD Jail Status ---"
+fail2ban-client status sshd # Check specific critical jail
+
+echo -e "\n=== Weekly Tasks Completed @ $(date) ==="
+
+# --- Reporting ---
+# Always send the combined log file if MAILTO is set
+# Note: The output/errors of the mail command itself will also go into $LOGFILE
+if [[ -n "$MAILTO" ]]; then
+    # Check if the log file actually contains anything substantial before mailing
+    if [ -s "$LOGFILE" ]; then
+        mail -s "[Report] Weekly Maintenance for $HOSTNAME (anro.dev)" "$MAILTO" < "$LOGFILE"
+    else
+        echo "Log file was empty, not sending email."
+        # Alternatively, send an empty email:
+        # mail -s "[Report] Weekly Maintenance for $HOSTNAME (anro.dev) - Log Empty" "$MAILTO" < /dev/null
+    fi
+fi
+
+exit 0
+```
+
+Make the script executable:
+```bash
+sudo chmod +x /etc/cron.weekly/custom-maintenance-security
+```
+
+Test the script manually to ensure it runs without errors:
+```bash
+sudo /etc/cron.weekly/custom-maintenance-security
+```
+
+> You might need to change the [postfix configuration](https://www.postfix.org/BASIC_CONFIGURATION_README.html) ([ubuntu documentation](https://documentation.ubuntu.com/server/how-to/mail-services/install-postfix/)) to allow the `mail` command to work.
+
+
+## Link Collection for more information
+
+**User management links**
+
+- [More about user management](https://documentation.ubuntu.com/server/how-to/security/user-management/)
+- [`adduser` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/adduser.8.html)
+- [`usermod` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/usermod.8.html)
+- [ExplainShell for `usermod`](https://explainshell.com/explain?cmd=sudo+usermod+-aG+sudo+anro)
+
+**ZSH and Starship links**
+
+- [Starship Prompt](https://starship.rs/)
+- [Oh My Zsh](https://ohmyz.sh/) ([Plugins Wiki](https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins))
+- [Zsh Autosuggestions Plugin](https://github.com/zsh-users/zsh-autosuggestions)
+- [Zsh Syntax Highlighting Plugin](https://github.com/zsh-users/zsh-syntax-highlighting)
+
+**Linux file permissions links**
+
+- [Redhat - Linux file permissions explained](https://www.redhat.com/en/blog/linux-file-permissions-explained)
+- [ExplainShell](https://explainshell.com/explain?cmd=sudo+chmod+600+%2Fetc%2Fshadow)
+- [`chmod` man page](https://manpages.ubuntu.com/manpages/latest/en/man1/chmod.1.html)
+- [`shadow` file format](https://manpages.ubuntu.com/manpages/latest/en/man5/shadow.5.html)
+- [`gshadow` file format](https://manpages.ubuntu.com/manpages/latest/en/man5/gshadow.5.html)
+- [`passwd` file format](https://manpages.ubuntu.com/manpages/latest/en/man5/passwd.5.html)
+- [`group` file format](https://manpages.ubuntu.com/manpages/latest/en/man5/group.5.html)
+
+**SSH links**
+
+- [`ssh-keygen` man page](https://manpages.ubuntu.com/manpages/latest/en/man1/ssh-keygen.1.html)
+- [`ssh-copy-id` man page](https://manpages.ubuntu.com/manpages/latest/en/man1/ssh-copy-id.1.html)
+- [`sshd_config` man page](https://manpages.ubuntu.com/manpages/latest/en/man5/sshd_config.5.html)
+- [Mozilla Infosec SSH Guidelines (Advanced)](https://infosec.mozilla.org/guidelines/openssh)
+
+**UFW links**
+
+- [UFW Ubuntu](https://documentation.ubuntu.com/server/how-to/security/firewalls/index.html)
+- [`ufw` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/ufw.8.html)
+
+**Fail2Ban links**
+
+- [Fail2ban Official Website](https://www.fail2ban.org/wiki/index.php/Main_Page)
+- [`jail.conf` man page (explains options)](https://manpages.ubuntu.com/manpages/latest/en/man5/jail.conf.5.html)
+
+**Security updates links**
+
+- [Automatic Security Updates (Ubuntu Documentation)](https://help.ubuntu.com/community/AutomaticSecurityUpdates)
+- [`unattended-upgrades` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/unattended-upgrade.8.html)
+- [`apticron` README](https://salsa.debian.org/debian/apticron/-/blob/master/README)
+- [`apt-listchanges` man page](https://manpages.ubuntu.com/manpages/latest/en/man1/apt-listchanges.1.html)
+
+**AppArmor links**
+
+- [AppArmor](https://apparmor.net/)
+- [AppArmor (Ubuntu Wiki)](https://documentation.ubuntu.com/server/how-to/security/apparmor/)
+- [`aa-status` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/aa-status.8.html)
+
+**Lynis links**
+
+- [CISOfy Lynis Website](https://cisofy.com/lynis/)
+- [Lynis Documentation](https://cisofy.com/documentation/lynis/)
+
+**Rootkits links**
+
+- [`rkhunter` Documentation & Website](http://rkhunter.sourceforge.net/) ([`rkhunter` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/rkhunter.8.html))
+- [`chkrootkit` Website](http://www.chkrootkit.org/) ([`chkrootkit` README](https://github.com/Magentron/chkrootkit/blob/master/README))
+- [What is a Rootkit? (Wikipedia)](https://en.wikipedia.org/wiki/Rootkit)
+
+**auditd links**
+
+- [Red Hat - Auditd](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/security_guide/sec-defining_audit_rules_and_controls)
+- [Understanding Audit Log Files (Red Hat)](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/security_guide/sec-understanding_audit_log_files)
+- [`auditd` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/auditd.8.html)
+- [`audit.rules` man page](https://manpages.ubuntu.com/manpages/latest/en/man7/audit.rules.7.html)
+- [`ausearch` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/ausearch.8.html)
+- [`aureport` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/aureport.8.html)
+
+**Logwatch links**
+
+- [Logwatch Project Page](https://sourceforge.net/projects/logwatch/)
+- [`logwatch` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/logwatch.8.html)
+- [`logwatch.conf` man page](https://manpages.ubuntu.com/manpages/latest/en/man5/logwatch.conf.5.html)
+- [`logrotate` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/logrotate.8.html)`
+
+---
+
+That's all for now—hopefully, you found this post helpful and discovered some extensions you weren't aware of.
+
+<div className="w-full relative mt-12 mb-8 rounded-xl bg-gradient-to-r from-green-700 via-lime-600 to-emerald-500 p-1 shadow-xl">
+    <div className="rounded-lg bg-green-950 p-8 text-center">
+        <h3 className="mb-2 text-2xl font-bold text-white">Thank you for reading and have a nice 🍵❤️</h3>
+    </div>
+</div>

@@ -203,11 +203,11 @@ export default async function PostPage({ params }: PostPageProps) {
             </header>
             {image && (
               <div className="mb-8">
-                <img
-                  src={imageUrlAbsolute}
-                  alt={title}
-                  className="w-full h-auto rounded-lg shadow-lg"
-                />
+              <img
+                src={imageUrlAbsolute}
+                alt={title}
+                className="w-full h-auto object-cover rounded-lg shadow-lg"
+              />
               </div>
             )}
             <div className="prose lg:prose-xl dark:prose-invert max-w-none">
