@@ -1,6 +1,6 @@
 ---
 title: 'Ubuntu 24.04.2 LTS Server Setup'
-date: '2025-06-15T09:00:00+02:00'
+date: '2025-06-27T09:00:00+02:00'
 description: 'Setting up a new Ubuntu 24.04.2 LTS server and configuring essential tools and services'
 tags: ['ubuntu', 'server', 'setup']
 image: 'birb_1.jpg'
@@ -42,11 +42,12 @@ At the bottom of this post, I will also share some useful resources and links to
 
 ## User Management
 
-Now per default, your Ubuntu server will have a root user with full privileges. It's a good practice to create a new user with `sudo` privileges and disable root login for security reasons.
+Now per default, your Ubuntu server will have a root user with full privileges. 
+It's a good practice to create a new user with `sudo` privileges and disable root login for security reasons.
 
 
 ```bash
-USERNAME="anro"
+USERNAME="ubuntu"
 
 # Create the new user
 sudo adduser $USERNAME
@@ -59,7 +60,7 @@ sudo usermod -aG sudo $USERNAME
 su - $USERNAME 
 ```
 
-> **Note**: Make sure to replace `anro` with your desired username. From this point on, perform all actions as the new user (`anro` here), using `sudo` when necessary.
+> **Note**: Make sure to replace `ubuntu` with your desired username. From this point on, perform all actions as the new user (`ubuntu` here), using `sudo` when necessary.
 
 
 ## Shell Configuration
@@ -104,7 +105,7 @@ nano ~/.zshrc
 Add the following lines to the file:
 
 ```bash
-export ZSH="/home/anro/.oh-my-zsh"
+export ZSH="/home/ubuntu/.oh-my-zsh"
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ZSH_THEME="agnoster"
 
@@ -178,7 +179,7 @@ Here are a couple of mine:
 # General
 # ----------------------
 # Alias's for multiple directory listing commands
-alias lt='ls --human-readable --size -1 -S --classify' # list by size and append indicators
+alias lt='ls --human-readable --size -1 -S --classify'
 alias la='ls -Alh'                # show hidden files
 alias ls='ls -aFh --color=always' # add colors and file type extensions
 alias lx='ls -lXBh'               # sort by extension
@@ -212,32 +213,38 @@ source ~/.zshrc
 After setting up your user and shell, it's a good idea to update the permissions for sensitive files to ensure that only your user can read them:
 
 ```bash
-# Contains hashed user passwords. Should only be readable/writable by root.
+# Contains hashed user passwords. 
+# Should only be readable/writable by root.
 sudo chmod 600 /etc/shadow
 
-# Contains hashed group passwords. Should only be readable/writable by root.
+# Contains hashed group passwords. 
+# Should only be readable/writable by root.
 sudo chmod 600 /etc/gshadow
 
-# Contains user account information. Should be readable by all, writable only by root.
+# Contains user account information. 
+# Should be readable by all, writable only by root.
 sudo chmod 644 /etc/passwd
 
-# Contains group information. Should be readable by all, writable only by root.
+# Contains group information. 
+# Should be readable by all, writable only by root.
 sudo chmod 644 /etc/group
 ```
 Explanation:
 > * `chmod 600`: Owner has read and write permissions (`rw-------`). Only root can access `/etc/shadow` and `/etc/gshadow`.
 > * `chmod 644`: Owner has read/write, group has read, others have read (`rw-r--r--`). Allows users and services to look up user/group information but not modify it.
 
-> **Note:** These permissions are standard for Ubuntu and most Linux distributions (but if you are new, it's good to know about). Do not make them *less* restrictive unless you have a very specific, understood reason. 
-
+> **Note:** These permissions are standard for Ubuntu and most Linux distributions (but if you are new, it's good to know about). 
+Do not make them *less* restrictive unless you have a very specific, understood reason. 
 
 ## SSH
 
-To connect to your server securely, you should set up SSH (Secure Shell). This allows you to log in remotely and execute commands securely. You probably already logged in via SSH during the initial setup, now it's time to configure it.
+To connect to your server securely, you should set up SSH (Secure Shell). This allows you to log in remotely and execute commands securely. 
+You probably already logged in via SSH during the initial setup, now it's time to configure it.
 
 ### SSH Setup and Key Management
 
-Upload your SSH public key to the server. If you don't have one create one on your *local* machine (not the server) using the following command:
+Upload your SSH public key to the server. 
+If you don't have one create one on your *local* machine (not the server) using the following command:
 ```bash
 # Follow the prompts (accept default file location)
 ssh-keygen -t ed25519 -C "yourmail@mail.com"
@@ -298,8 +305,8 @@ UsePAM yes
 # Disable X11 Forwarding if not needed (typically not on servers)
 X11Forwarding no
 
-# Limit users/groups allowed to SSH (replace anro with your user/group)
-# AllowUsers anro anotheruser
+# Limit users/groups allowed to SSH (replace ubuntu with your user/group)
+# AllowUsers ubuntu anotheruser
 # AllowGroups ssh-access-group
 
 # Set idle timeouts (e.g., disconnect after 15 mins idle)
@@ -325,7 +332,7 @@ These settings enhance security by:
 - Logging more details to help with auditing and troubleshooting.
 
 
-After saving the changes, test your changes. If it reports errors, fix them in /etc/ssh/sshd_config and test again (If it shows no output or just returns, the syntax is okay):
+After saving the changes, test your changes. If it reports errors, fix them in `/etc/ssh/sshd_config` and test again (If it shows no output or just returns, the syntax is okay):
 ```bash
 # Test the new configuration for syntax errors
 sudo sshd -t
@@ -337,8 +344,8 @@ sudo service ssh restart
 Now you can connect to your server using SSH with your public key authentication.
 
 ```bash
-ssh anro@yourdomainorip.com 
-# (or ssh -p <NewPort> anro@yourdomainorip.com)
+ssh ubuntu@yourdomainorip.com 
+# (or ssh -p <NewPort> ubuntu@yourdomainorip.com)
 ```
 
 ## Firewall Configuration
@@ -401,7 +408,7 @@ sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 sudo nano /etc/fail2ban/jail.local
 ```
 
-Now change the configuration to suit your needs. Here are some of my recommended settings:
+Now change the configuration to suit your needs. Here are some of my settings:
 
 ```ini
 [sshd]
@@ -436,7 +443,6 @@ Now these settings are pretty self-explanatory, but here are some explanations f
   - `maxretry`, `findtime`, `banaction`,`bantime`: Can be set here to override `[DEFAULT]` specifically for SSH.
 
 I mostly use the ssh jail, but you can enable others as well (Nginx, Apache), mail servers, etc., find their sections and set `enabled = true`.
-
 
 Now start and enable Fail2ban:
 
@@ -502,7 +508,6 @@ Inside `50unattended-upgrades`, review and uncomment/adjust:
 sudo dpkg-reconfigure apt-listchanges
 ```
 
-
 ## AppArmor/SELinux
 
 AppArmor is a mandatory access control (MAC) system that restricts programs' capabilities with per-program profiles. 
@@ -566,7 +571,7 @@ sudo nala install -y rkhunter
 sudo rkhunter --update
 sudo rkhunter --propupd
 
-# Run initial scans manually to check for immediate issues and understand the output.
+# Run initial scans manually, check for immediate issues and understand the output.
 # Be prepared for potential *false positives*, especially on the first run.
 # Investigate any warnings carefully before assuming they are malicious.
 echo "Running initial rkhunter check (press Enter after reviewing sections)..."
@@ -593,7 +598,7 @@ sudo apt install -y auditd audispd-plugins
 # Configure basic audit rules
 sudo tee /etc/audit/rules.d/audit.rules > /dev/null << EOT
 
-# Increase buffer size (adjust as needed, default might be too small for busy systems)
+# Increase buffer size (adjust as needed for busy systems)
 # -b 8192
 
 # Monitor for unauthorized access attempts to files
@@ -614,7 +619,7 @@ sudo tee /etc/audit/rules.d/audit.rules > /dev/null << EOT
 # Monitor commands run by users with admin privileges
 -a exit,always -F arch=b64 -F euid=0 -S execve -k sudo_commands
 
-# Monitor login/logout events, in my case I don't need it since I use SSH keys that are password protected
+# Monitor login/logout events, in my case I don't need it
 # -w /var/log/faillog -p wa -k logins_failed
 # -w /var/log/lastlog -p wa -k logins_recorded
 # -w /var/run/utmp -p wa -k logins_sessions # Might be noisy
@@ -650,7 +655,8 @@ Now there are quite a few rules, here is what they do:
 - **Login/Logout Events**: Optionally monitor login/logout events (commented out here, but can be enabled if needed).
 
 
-That's a lot but will monitor most of your important files. Now you can check the audit logs using the `ausearch` command:
+That's a lot! (though I'm sure more could be added). This will monitor most of your important files. 
+Now you can check the audit logs using the `ausearch` command:
 
 ```bash
 # Search for events using the defined keys
@@ -694,7 +700,7 @@ MailFrom = logwatch@yourhostname
 # How much detail
 Detail = Low # (Or Med, High)
 
-# Time range (default is 'yesterday') Use 'All' for testing, 'yesterday' for daily cron
+# Time range (default is 'yesterday') Use 'All' for testing
 Range = yesterday
 
 # Default output format. 'mail' or 'stdout'.
@@ -727,13 +733,12 @@ And the following content to run Logwatch daily:
 sudo logwatch --range yesterday --output stdout --detail Low
 
 # Run for today, force HTML format, email to specific address (overrides config)
-# sudo logwatch --range today --format html --mailto anrodev@proton.me --detail Med
+# sudo logwatch --range today --format html --mailto ubuntudev@proton.me --detail Med
 ```
 
 To make it weekly, move the script from `cron.daily` to `cron.weekly` and adjust the `Range` if desired (though running daily and just *reading* weekly might be simpler).
 
 > **(Optional) Centralized Logging:** For managing logs from multiple servers, consider tools like Graylog, Loki, ELK stack (Elasticsearch, Logstash, Kibana), or Splunk. 
-
 
 
 ## Automated Maintenance & Security Scanning (Cron)
@@ -748,7 +753,7 @@ Create a script file in the `/etc/cron.weekly` directory, which runs automatical
 sudo nano /etc/cron.weekly/custom-maintenance-security
 ```
 
-Add the following content:
+The following script is a starting point for your weekly maintenance and security tasks, expand it further with your own tweaks!
 ```bash
 #!/bin/bash
 
@@ -785,7 +790,7 @@ apt-get update
 echo -e "\n--- Cleaning Up Packages ---"
 # Remove automatically installed dependencies that are no longer needed
 apt-get autoremove -y
-# Clean up downloaded package files (.deb) from the cache
+# Clean up downloaded package files
 apt-get clean
 nala clean
 
@@ -815,11 +820,11 @@ echo -e "\n=== Weekly Tasks Completed @ $(date) ==="
 if [[ -n "$MAILTO" ]]; then
     # Check if the log file actually contains anything substantial before mailing
     if [ -s "$LOGFILE" ]; then
-        mail -s "[Report] Weekly Maintenance for $HOSTNAME (anro.dev)" "$MAILTO" < "$LOGFILE"
+        mail -s "[Report] Weekly Maintenance for $HOSTNAME (ubuntu.dev)" "$MAILTO" < "$LOGFILE"
     else
         echo "Log file was empty, not sending email."
         # Alternatively, send an empty email:
-        # mail -s "[Report] Weekly Maintenance for $HOSTNAME (anro.dev) - Log Empty" "$MAILTO" < /dev/null
+        # mail -s "[Report] Weekly Maintenance for $HOSTNAME (ubuntu.dev) - Log Empty" "$MAILTO" < /dev/null
     fi
 fi
 
@@ -841,12 +846,14 @@ sudo /etc/cron.weekly/custom-maintenance-security
 
 ## Link Collection for more information
 
+Here is a link collection I saved in case you want to read more about these topics or just need a start for where to search for next.
+
 **User management links**
 
 - [More about user management](https://documentation.ubuntu.com/server/how-to/security/user-management/)
 - [`adduser` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/adduser.8.html)
 - [`usermod` man page](https://manpages.ubuntu.com/manpages/latest/en/man8/usermod.8.html)
-- [ExplainShell for `usermod`](https://explainshell.com/explain?cmd=sudo+usermod+-aG+sudo+anro)
+- [ExplainShell for `usermod`](https://explainshell.com/explain?cmd=sudo+usermod+-aG+sudo+ubuntu)
 
 **ZSH and Starship links**
 
@@ -924,7 +931,7 @@ sudo /etc/cron.weekly/custom-maintenance-security
 
 ---
 
-That's all for now—hopefully, you found this post helpful and discovered some extensions you weren't aware of.
+That's all for now—hopefully, you found this post helpful and learned something new :)
 
 <div className="w-full relative mt-12 mb-8 rounded-xl bg-gradient-to-r from-green-700 via-lime-600 to-emerald-500 p-1 shadow-xl">
     <div className="rounded-lg bg-green-950 p-8 text-center">
