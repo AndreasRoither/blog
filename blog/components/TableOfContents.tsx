@@ -73,13 +73,32 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
     return null;
   }
 
+  const getIndentationClass = (depth: number) => {
+    switch (depth) {
+      case 1:
+        return "ml-0";
+      case 2:
+        return "ml-0";
+      case 3:
+        return "ml-2";
+      case 4:
+        return "ml-4";
+      case 5:
+        return "ml-6";
+      case 6:
+        return "ml-8";
+      default:
+        return "ml-0";
+    }
+  };
+
   return (
     <nav className="sticky top-24 p-4 rounded-lg max-h-[calc(100vh-12rem)] overflow-y-auto">
       <ul className="space-y-2">
         {headings.map((heading) => (
           <li
             key={heading.slug}
-            className={`${heading.depth > 2 ? `ml-${(heading.depth - 2) * 3}` : "ml-0"}`}
+            className={getIndentationClass(heading.depth)}
           >
             <a
               href={`#${heading.slug}`}
