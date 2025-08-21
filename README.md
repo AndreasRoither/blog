@@ -3,7 +3,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <img src="blog/public/donut.jpg" height="150">
+  <img src="blog/public/img/1_donut.jpg" height="150">
 
   <h2 align="center">Blog</h2>
 
