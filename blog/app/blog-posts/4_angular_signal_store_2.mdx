@@ -1,0 +1,275 @@
+---
+title: 'Angular Signals and NgRx Signal Store: A Dialog State Management Feature'
+date: '2025-08-21T12:00:00+02:00'
+description: 'Dialog statemanagement is a common feature in many applications. This posts shows how to implement a NGRX Signals Store Feature for exactly that.'
+tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
+image: '/img/4_doe_1.jpg'
+draft: false
+series: 'Angular Signal Store: A Deep Dive with practical features'
+seriesPart: 2
+seriesTotal: 10
+---
+
+## Angular Signals and State Management
+
+In the last post, I showed a pretty basic example (you can find the previous post [here](/posts/4_angular_signal_store)). Let's step this up a bit :)
+
+
+## NGRX Signal Store Features
+
+I did not show you the best part of the `ngrx/signals` package yet, and that is the `signalStoreFeature` function, arguably one of my favorite things about this library.
+It basically allows you to create a feature that can be used in however many stores you want, you can even compose multiple features together to create a more complex store.
+
+Let's reuse the matcha counter example from the previous post and turn it into a feature:
+
+```typescript caption="matcha.store.ts"
+// With features it's better to use interfaces to define the state
+interface MatchaState {
+    cups: number;
+    brewing: boolean;
+}
+
+// Create the initial state
+const initialMatchaState: MatchaState = {
+    cups: 0,
+    brewing: false,
+};
+
+// Create the matcha store feature
+export const withMatchaFeature = () =>
+    signalStoreFeature(
+        withState(initialMatchaState),
+
+        withMethods((store) => ({
+            brewMatcha() {
+                if (!store.brewing()) {
+                    patchState(store, { brewing: true });
+
+                    setTimeout(() => {
+                        patchState(store, {
+                            cups: store.cups() + 1,
+                            brewing: false,
+                        });
+                    }, 2000);
+                }
+            },
+
+            drinkMatcha() {
+                if (store.cups() > 0) {
+                    patchState(store, { cups: store.cups() - 1 });
+                }
+            },
+
+            resetMatcha() {
+                patchState(store, initialMatchaState);
+            },
+        }))
+    );
+
+export const MatchaStore = signalStore({ providedIn: 'root' }, withMatchaFeature());
+```
+
+Pretty simple! The usage of the store is the same as before, but now we can plug this into any store we want.
+
+## The Dialog Signal Store Feature
+
+I want to have the following capabilities in our dialog store:
+- Open and close dialogs
+- Set loading state
+- Set results and errors
+- Prevent closing based on custom conditions (like form dirty state)
+- Provide metadata for the dialog
+
+First, we define the types we need for the dialog feature.
+
+```typescript caption="dialog.store.feature.ts"
+export const DialogStatus = {
+    Closed: 'closed',
+    Open: 'open',
+    Loading: 'loading',
+    Error: 'error',
+    Completed: 'completed'
+} as const;
+
+export type DialogStatus = (typeof DialogStatus)[keyof typeof DialogStatus];
+
+export interface DialogState<TConfig, TResult = unknown> {
+    isOpen: boolean;
+    loading: boolean;
+    config: TConfig | undefined;
+    result: TResult | undefined;
+    error: unknown;
+    metadata: Record<string, unknown> | undefined;
+    preventClose: boolean;
+}
+
+export interface DialogOpenOptions<TConfig> {
+    config: TConfig;
+    metadata?: Record<string, unknown>;
+    preventClose?: boolean;
+}
+
+export interface ClosePreventionOptions {
+    isDirty?: boolean;
+    hasUnsavedChanges?: boolean;
+    isProcessing?: boolean;
+    customCondition?: boolean;
+}
+```
+
+These are pretty self explanatory, I want to have as much flexibility as possible to avoid unforseen issues in the future.
+Now we can implement the dialog store feature using the `signalStoreFeature` function:
+
+```typescript caption="dialog.store.feature.ts"
+import { computed } from '@angular/core';
+import { patchState, signalStoreFeature, withComputed, withMethods, withState } from '@ngrx/signals';
+
+export function withDialogFeature<TConfig, TResult = unknown>(config?: TConfig) {
+    const initialState: DialogState<TConfig, TResult> = {
+        isOpen: false,
+        loading: false,
+        config: config,
+        result: undefined,
+        error: undefined,
+        metadata: undefined,
+        preventClose: false,
+    };
+
+    return signalStoreFeature(
+        withState(initialState),
+        withComputed((store) => ({
+            canClose: computed(() => !store.loading() && !store.preventClose()),
+            hasError: computed(() => !!store.error()),
+            hasResult: computed(() => store.result() !== undefined),
+            dialogStatus: computed((): DialogStatus => {
+                if (store.loading()) return DialogStatus.Loading;
+                if (store.error()) return DialogStatus.Error;
+                if (store.result() !== undefined) return DialogStatus.Completed;
+                if (store.isOpen()) return DialogStatus.Open;
+                return DialogStatus.Closed;
+            }),
+            isInFinalState: computed(() => {
+                const hasError = !!store.error();
+                const hasResult = store.result() !== undefined;
+                return hasError || hasResult;
+            }),
+        })),
+        withMethods((store) => ({
+            setLoading(isLoading: boolean) {
+                patchState(store, { loading: isLoading });
+            },
+            toggleLoading() {
+                patchState(store, { loading: !store.loading() });
+            },
+            setResult(result: TResult) {
+                patchState(store, { result });
+            },
+            setError(error: unknown) {
+                patchState(store, { error, loading: false });
+            },
+            clearError() {
+                patchState(store, { error: undefined });
+            },
+            setMetadata(metadata: Record<string, unknown>) {
+                patchState(store, { metadata });
+            },
+            setPreventClose(prevent: boolean) {
+                patchState(store, { preventClose: prevent });
+            },
+            setFormDirty(isDirty: boolean) {
+                patchState(store, { preventClose: isDirty });
+            },
+            configureClosePrevention(options: ClosePreventionOptions) {
+                const shouldPrevent = !!(options.isDirty || options.hasUnsavedChanges || options.isProcessing || options.customCondition);
+                patchState(store, { preventClose: shouldPrevent });
+            },
+            clearPreventClose() {
+                patchState(store, { preventClose: false });
+            },
+            open(config?: TConfig, metadata?: Record<string, unknown>) {
+                patchState(store, {
+                    isOpen: true,
+                    loading: false,
+                    config,
+                    result: undefined,
+                    error: undefined,
+                    metadata,
+                    preventClose: false,
+                });
+            },
+            openWithOptions(options: DialogOpenOptions<TConfig>) {
+                patchState(store, {
+                    isOpen: true,
+                    loading: false,
+                    config: options.config,
+                    result: undefined,
+                    error: undefined,
+                    metadata: options.metadata,
+                    preventClose: options.preventClose || false,
+                });
+            },
+            updateConfig(config: Partial<TConfig>) {
+                if (!store.isOpen()) return;
+
+                patchState(store, {
+                    config: { ...store.config(), ...config } as TConfig,
+                });
+            },
+            close(result?: TResult, forceClose = false) {
+                if (!forceClose && (store.loading() || store.preventClose())) {
+                    return;
+                }
+
+                patchState(store, {
+                    isOpen: false,
+                    loading: false,
+                    result,
+                    error: undefined,
+                    preventClose: false,
+                });
+            },
+            closeWithError(error: unknown) {
+                patchState(store, {
+                    isOpen: false,
+                    loading: false,
+                    error,
+                    result: undefined,
+                });
+            },
+            reset() {
+                patchState(store, {
+                    isOpen: initialState.isOpen,
+                    loading: initialState.loading,
+                    config: initialState.config,
+                    result: initialState.result,
+                    error: initialState.error,
+                    metadata: initialState.metadata,
+                    preventClose: initialState.preventClose,
+                });
+            },
+        }))
+    );
+}
+```
+
+Some functions and states might be a bit redundant but I think they are nice to have. 
+This feature can now be used to handle dialog states for any dialog with any configuration you want.
+
+## What's Next?
+
+Pagination! This is a common feature in many applications, typically a REST API will return a paginated response, and combined with http operations, the store will become pretty powerful.
+
+
+## More links to explore
+
+- [NgRx Signal Store Documentation](https://ngrx.io/guide/signals/signal-store)
+
+---
+
+That's all for now—hopefully, you found this post helpful and maybe you can use this feature in your own Angular application :)
+
+<div className="w-full relative mt-12 mb-8 rounded-xl bg-gradient-to-r from-green-700 via-lime-600 to-emerald-500 p-1 shadow-xl">
+    <div className="rounded-lg bg-green-950 p-8 text-center">
+        <h3 className="mb-2 text-2xl font-bold text-white">Thank you for reading and have a nice 🍵❤️</h3>
+    </div>
+</div>

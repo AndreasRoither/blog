@@ -1,10 +1,10 @@
 ---
 title: 'Angular Signals and NgRx Signal Store: A Modern Approach to State Management'
-date: '2025-08-07T09:00:00+02:00'
+date: '2025-08-19T09:00:00+02:00'
 description: 'An introduction to Angular Signals and NgRx Signal Store - exploring reactive state management'
 tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
-image: 'birb_1.jpg'
-draft: true
+image: '/img/4_tea_mochi_1.jpg'
+draft: false
 series: 'Angular Signal Store: A Deep Dive with practical features'
 seriesPart: 1
 seriesTotal: 10
@@ -150,7 +150,7 @@ export const MatchaStore = signalStore(
       }
     },
     
-    reset() {
+    resetMatcha() {
       patchState(store, initialState);
     }
   }))
@@ -181,7 +181,7 @@ import { MatchaStore } from './matcha.store';
                 <button 
                     (click)="store.drinkMatcha()" 
                     [disabled]="store.cups() === 0">Drink Matcha</button>
-                <button (click)="store.reset()">Reset</button>
+                <button (click)="store.resetMatcha()">Reset</button>
             </div>
         </div>
     `,
