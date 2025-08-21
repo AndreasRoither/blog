@@ -15,7 +15,12 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN pnpm build
+
+# Generate metadata before building
+RUN pnpm generate-metadata
+
+# Build the application
+RUN pnpm build:prod
 
 
 # ---- Stage 2: Production Runner ----

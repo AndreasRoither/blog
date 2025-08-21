@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development next dev --turbopack",
-    "build": "next build",
-    "build:prod": "cross-env NODE_ENV=production next build",
+    "build": "pnpm generate-metadata && next build",
+    "build:prod": "cross-env NODE_ENV=production pnpm generate-metadata && next build",
+    "generate-metadata": "tsx scripts/generate-posts-metadata.ts",
     "start": "next start",
     "lint": "next lint",
     "lint:b": "biome lint",
@@ -56,6 +57,7 @@
     "@types/unist": "^3.0.3",
     "cross-env": "^7.0.3",
     "tailwindcss": "^4.1.2",
+    "tsx": "^4.20.4",
     "typescript": "^5.8.2"
   }
 }

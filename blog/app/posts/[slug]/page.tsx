@@ -4,8 +4,7 @@ import { notFound } from "next/navigation";
 import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
 import { createSlug } from "@/lib/post-utils";
-import { getAllPostSlugs, getPostBySlug } from "@/lib/posts";
-import { getSeriesBySlug } from "@/lib/series";
+import { getPostBySlug } from "@/lib/posts";
 import { siteMetadata } from "@/lib/siteMetadata";
 import type { Post, Series } from "@/model/model";
 import type { Metadata } from "next";
@@ -14,6 +13,7 @@ import type { Options as RehypePrettyCodeOptions } from "rehype-pretty-code";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
+import { findSeriesBySlug } from "@/lib/metadata-loader";
 
 interface PostPageParams {
   slug: string;
@@ -41,18 +41,6 @@ const prettyCodeOptions: Partial<RehypePrettyCodeOptions> = {
     node.properties.className = ["word"];
   },
 };
-
-/**
- * Generates static parameters for pre-rendering post pages at build time.
- *
- * @returns {Promise<PostPageParams[]>} A promise that resolves to an array of post parameters,where each parameter contains a slug property.
- */
-export async function generateStaticParams(): Promise<PostPageParams[]> {
-  const slugs = getAllPostSlugs();
-  return slugs.map((slug) => ({
-    slug: slug,
-  }));
-}
 
 /**
  * Generates metadata for a blog post page based on the post slug.
@@ -140,7 +128,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   if (post.series) {
     const seriesSlug = createSlug(post.series);
-    seriesData = await getSeriesBySlug(seriesSlug);
+    seriesData = await findSeriesBySlug(seriesSlug);
     if (seriesData) {
       postIndexInSeries = seriesData.posts.findIndex((p) => p.slug === post.slug);
     }
