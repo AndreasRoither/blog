@@ -12,8 +12,8 @@ seriesTotal: 10
 
 ## Introduction to Angular Signals and State Management
 
-So Angular has made some significant changes the last years, and one of the more exciting ones for me personally is the introduction of **Signals**. 
-They have been experimental for a while, but in Angular v20 `effect`, `linkedSignal`, `toSignal` are now stable APIs ([Angular Blog](https://blog.angular.dev/announcing-angular-v20-b5c9c06cf301)).
+So Angular has made some significant changes in the last years, and one of the more exciting ones for me personally is the introduction of **Signals**. 
+They have been experimental for a while, but in Angular v20 `effect`, `linkedSignal` and `toSignal` are now stable APIs ([Angular Blog](https://blog.angular.dev/announcing-angular-v20-b5c9c06cf301)).
 
 This is a big change for state management and I for one can finally say goodbye to `zonejs` .... Is what I would like to say if I had time to rewrite all work projects :)
 
@@ -30,14 +30,14 @@ I do have some time to write this blog post though, so let's get started!
 
 ## What are Angular Signals?
 
-Angular Signals are all about reactivity which is the ability to respond to changes in data which in turn allows us to react to changes in either UI or logic.
+Angular Signals are all about reactivity, which is the ability to respond to changes in data which in turn allows us to react to changes in either UI or logic.
 They can contain any primitive or complex value and the neat thing about them is that Angular automatically tracks their usage.
 
-This is useful for performance improvements, as Angular can optimize change detection by only updating components that depend on changed signals.
+This is useful for performance improvements, as Angular can optimize change detection by only updating components that have signal changes.
 But my use case (and also topic of this blog post) is state management; and more specifically the `ngrx/signals` package.
 It provides a nice way to manage state in Angular applications using signals without getting overly complicated.
 
-I am going to use signals a lot in the later sections, but here is a link if you want to read more about them:
+I am going to use signals a lot in the later sections, so here is a link if you want to read more about them:
 - [Angular Signals Documentation](https://angular.dev/guide/signals)
 
 ### Basic Signal Usage
@@ -89,14 +89,14 @@ This example shows three concepts of Angular Signals:
   - Don't overuse effects, they can be a major performance problem as they track multiple signals and run whenever any of them change.
   - I prefer to update values that are not heavily affecting the UI
 
-With that out of the way, let's move on the interesting part: **NgRx Signal Store** :)
+With that out of the way, let's move on to the interesting part: **The NgRx Signal Store** :)
 
 ## Why NgRx Signal Store?
 
 As mentioned earlier, I use the `ngrx/signals` package for state management in Angular applications.
 Signals alone are a good tool to manage local component states but are not optimal for larger complex applications.
 
-This is where **NgRx Signal Store** comes into play. 
+This is where the **NgRx Signal Store** comes into play. 
 It allows the combination of RxJS and Angular Signals with typescript to create a pretty flexible state management solution.
 
 Let's install the package first:
@@ -158,7 +158,7 @@ export const MatchaStore = signalStore(
 ```
 
 > An important thing to note is the `withState` method. 
-> It uses `DeepSignals` for complex state objects, which means that the state properties (and subproperties) are automatically converted to signals.
+> It uses `DeepSignals` for complex state objects, which means that the state properties (and sub-properties) are automatically converted to signals.
 
 Now let's use this store in a component:
 
