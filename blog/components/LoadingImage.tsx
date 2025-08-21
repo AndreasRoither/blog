@@ -24,7 +24,7 @@ export default function LoadingImage({ src, alt, title, className = "", forceLoa
         <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
-              <div className="w-16 h-16 border-4 border-green-200 dark:border-green-800 border-t-green-500 dark:border-t-green-400 rounded-full animate-spin"></div>
+              <div className="w-16 h-16 border-4 border-green-200 dark:border-green-800 border-t-green-500 dark:border-t-green-400 rounded-full animate-spin"/>
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-2xl">
                   🍵
