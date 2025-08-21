@@ -1,8 +1,10 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { notFound } from "next/navigation";
 
+import LoadingImage from "@/components/LoadingImage";
 import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
+import { findSeriesBySlug } from "@/lib/metadata-loader";
 import { createSlug } from "@/lib/post-utils";
 import { getPostBySlug } from "@/lib/posts";
 import { siteMetadata } from "@/lib/siteMetadata";
@@ -13,7 +15,6 @@ import type { Options as RehypePrettyCodeOptions } from "rehype-pretty-code";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
-import { findSeriesBySlug } from "@/lib/metadata-loader";
 
 interface PostPageParams {
   slug: string;
@@ -191,11 +192,12 @@ export default async function PostPage({ params }: PostPageProps) {
             </header>
             {image && (
               <div className="mb-8">
-              <img
-                src={imageUrlAbsolute}
-                alt={title}
-                className="w-full h-auto object-cover rounded-lg shadow-lg"
-              />
+                <LoadingImage
+                  src={imageUrlAbsolute}
+                  alt={title}
+                  title={title}
+                  className="w-full h-auto"
+                />
               </div>
             )}
             <div className="prose lg:prose-xl dark:prose-invert max-w-none">
