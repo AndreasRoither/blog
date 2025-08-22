@@ -1,11 +1,12 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { notFound } from "next/navigation";
 
+import LoadingImage from "@/components/LoadingImage";
 import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
+import { findSeriesBySlug } from "@/lib/metadata-loader";
 import { createSlug } from "@/lib/post-utils";
-import { getAllPostSlugs, getPostBySlug } from "@/lib/posts";
-import { getSeriesBySlug } from "@/lib/series";
+import { getPostBySlug } from "@/lib/posts";
 import { siteMetadata } from "@/lib/siteMetadata";
 import type { Post, Series } from "@/model/model";
 import type { Metadata } from "next";
@@ -41,18 +42,6 @@ const prettyCodeOptions: Partial<RehypePrettyCodeOptions> = {
     node.properties.className = ["word"];
   },
 };
-
-/**
- * Generates static parameters for pre-rendering post pages at build time.
- *
- * @returns {Promise<PostPageParams[]>} A promise that resolves to an array of post parameters,where each parameter contains a slug property.
- */
-export async function generateStaticParams(): Promise<PostPageParams[]> {
-  const slugs = getAllPostSlugs();
-  return slugs.map((slug) => ({
-    slug: slug,
-  }));
-}
 
 /**
  * Generates metadata for a blog post page based on the post slug.
@@ -140,7 +129,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   if (post.series) {
     const seriesSlug = createSlug(post.series);
-    seriesData = await getSeriesBySlug(seriesSlug);
+    seriesData = await findSeriesBySlug(seriesSlug);
     if (seriesData) {
       postIndexInSeries = seriesData.posts.findIndex((p) => p.slug === post.slug);
     }
@@ -203,11 +192,12 @@ export default async function PostPage({ params }: PostPageProps) {
             </header>
             {image && (
               <div className="mb-8">
-              <img
-                src={imageUrlAbsolute}
-                alt={title}
-                className="w-full h-auto object-cover rounded-lg shadow-lg"
-              />
+                <LoadingImage
+                  src={imageUrlAbsolute}
+                  alt={title}
+                  title={title}
+                  className="w-full h-auto"
+                />
               </div>
             )}
             <div className="prose lg:prose-xl dark:prose-invert max-w-none">

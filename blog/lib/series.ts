@@ -1,12 +1,16 @@
 import type { PostMeta, Series } from "@/model/model";
+import { loadSeriesMetadata } from "./metadata-loader";
 import { createSlug } from "./post-utils";
-import { getAllPostsMeta } from "./posts";
 
 export async function getAllSeries(posts?: PostMeta[]): Promise<Series[]> {
-  const allPosts = posts ?? await getAllPostsMeta();
+  // metadata if no posts provided
+  if (!posts) {
+    return await loadSeriesMetadata();
+  }
+  
   const seriesMap: Map<string, Series> = new Map();
 
-  for (const post of allPosts) {
+  for (const post of posts) {
     if (!post.series || (post.draft === true && process.env.NODE_ENV === 'production')) continue;
 
     const seriesTitle = post.series;
@@ -55,10 +59,4 @@ export async function getAllSeries(posts?: PostMeta[]): Promise<Series[]> {
   allSeries.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
 
   return allSeries;
-}
-
-// get a single series by its slug
-export async function getSeriesBySlug(slug: string): Promise<Series | null> {
-  const allSeries = await getAllSeries();
-  return allSeries.find(series => series.slug === slug) || null;
 }

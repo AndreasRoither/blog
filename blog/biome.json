@@ -14,7 +14,7 @@
     "indentStyle": "space",
     "lineEnding": "lf",
     "indentWidth": 2,
-    "lineWidth": 100,
+    "lineWidth": 120,
     "ignore": ["*.json", "*.yml", "*.yaml", "*.md"]
   },
   "organizeImports": {
@@ -28,7 +28,7 @@
         "useImportType": "info"
       }
     },
-    "ignore": ["node_modules"]
+    "ignore": ["node_modules", "dist", ".next", "globals.css", "components/ui"]
   },
   "javascript": {
     "formatter": {

@@ -1,9 +1,9 @@
 import SiteLayout from "@/components/SiteLayout";
+import { loadPostsMetadata } from "@/lib/metadata-loader";
 import Link from "next/link";
-import { getAllPostsMeta } from "../../lib/posts";
 
 export default async function PostsIndexPage() {
-  const posts = await getAllPostsMeta();
+  const posts = await loadPostsMetadata();
 
   return (
     <SiteLayout>

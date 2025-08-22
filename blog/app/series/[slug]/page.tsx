@@ -1,5 +1,5 @@
 import SiteLayout from "@/components/SiteLayout";
-import { getAllSeries, getSeriesBySlug } from "@/lib/series";
+import { findSeriesBySlug } from "@/lib/metadata-loader";
 import { siteMetadata } from "@/lib/siteMetadata";
 import type { PostMeta } from "@/model/model";
 import Image from "next/image";
@@ -16,7 +16,7 @@ interface SeriesPageProps {
 
 export async function generateMetadata({ params }: SeriesPageProps) {
   const { slug } = await params;
-  const series = await getSeriesBySlug(slug);
+  const series = await findSeriesBySlug(slug);
 
   if (!series) {
     return {
@@ -36,13 +36,6 @@ export async function generateMetadata({ params }: SeriesPageProps) {
     //   images: series.image ? [{ url: `${siteMetadata.siteUrl}${series.image}` }] : [],
     // },
   };
-}
-
-export async function generateStaticParams() {
-  const seriesList = await getAllSeries();
-  return seriesList.map((series) => ({
-    slug: series.slug,
-  }));
 }
 
 const SeriesPostCard = ({ post, seriesSlug }: { post: PostMeta; seriesSlug: string }) => (
@@ -66,7 +59,7 @@ const SeriesPostCard = ({ post, seriesSlug }: { post: PostMeta; seriesSlug: stri
 
 export default async function SeriesPage({ params }: SeriesPageProps) {
   const { slug } = await params;
-  const series = await getSeriesBySlug(slug);
+  const series = await findSeriesBySlug(slug);
 
   if (!series) {
     notFound();

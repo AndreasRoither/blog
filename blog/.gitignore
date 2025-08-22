@@ -48,3 +48,7 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Generated metadata for prod
+public/api/posts-metadata.json
+public/api/series-metadata.json

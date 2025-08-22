@@ -3,8 +3,8 @@ import SiteLayout from "@/components/SiteLayout";
 import { getAllSeries } from "@/lib/series";
 import { siteMetadata } from "@/lib/siteMetadata";
 import Link from "next/link";
-import { getAllPostsMeta } from "../lib/posts";
 import type { PostMeta } from "../model/model";
+import { loadPostsMetadata } from "@/lib/metadata-loader";
 
 const calculateTagCounts = (posts: PostMeta[]): Record<string, number> => {
   const counts: Record<string, number> = {};
@@ -21,7 +21,7 @@ const calculateTagCounts = (posts: PostMeta[]): Record<string, number> => {
 export default async function Home() {
   // Fetch posts directly here (server-side)
   // Sort tags by count desc
-  const posts = await getAllPostsMeta();
+  const posts = await loadPostsMetadata();
   const tagCounts = calculateTagCounts(posts);
   const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]); // Sort by count (descending)
   const latestPosts = posts.slice(0, 5);
