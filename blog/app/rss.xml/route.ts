@@ -1,5 +1,5 @@
 
-import { getAllPostsMeta } from '@/lib/posts';
+import { loadPostsMetadata } from '@/lib/metadata-loader';
 import { siteMetadata } from '@/lib/siteMetadata';
 import RSS from 'rss';
 
@@ -9,7 +9,7 @@ import RSS from 'rss';
 export async function GET() {
   console.log('[RSS] Generating RSS feed...');
   try {
-    const posts = await getAllPostsMeta();
+    const posts = await loadPostsMetadata();
 
     const feedOptions = {
       title: siteMetadata.title,

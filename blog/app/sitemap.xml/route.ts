@@ -1,4 +1,4 @@
-import { getAllPostsMeta } from '@/lib/posts';
+import { loadPostsMetadata } from '@/lib/metadata-loader';
 import { siteMetadata } from '@/lib/siteMetadata';
 
 type SitemapRoute = {
@@ -15,7 +15,7 @@ export async function GET() {
   console.log('[Sitemap] Generating sitemap...');
 
   try {
-    const posts = await getAllPostsMeta();
+    const posts = await loadPostsMetadata();
     const siteUrl = siteMetadata.siteUrl;
 
     const staticRoutes: SitemapRoute[] = [
