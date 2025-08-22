@@ -1,22 +1,21 @@
 ---
 title: 'Angular Signals and NgRx Signal Store: A Dialog State Management Feature'
 date: '2025-08-21T12:00:00+02:00'
-description: 'Dialog statemanagement is a common feature in many applications. This posts shows how to implement a NGRX Signals Store Feature for exactly that.'
+lastModified: '2025-08-22T12:00:00+02:00'
+description: 'Dialog state management is a common feature in many applications. This posts shows how to implement a NGRX Signals Store Feature for exactly that.'
 tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
 image: '/img/4_doe_1.jpg'
 draft: false
 series: 'Angular Signal Store: A Deep Dive with practical features'
 seriesPart: 2
-seriesTotal: 10
+seriesTotal: 4
 ---
 
-## Angular Signals and State Management
-
-In the last post, I showed a pretty basic example (you can find the previous post [here](/posts/4_angular_signal_store)). 
+In the last post, I showed a pretty basic example (you can find the previous post [here](/posts/4_angular_signal_store_1)). 
 Let's step this up a bit :)
 
 
-## NGRX Signal Store Features
+## NGRX Signal Store Feature
 
 I did not show you the best part of the `ngrx/signals` package yet, and that is the `signalStoreFeature` function, arguably one of my favorite things about this library.
 It basically allows you to create a feature that can be used in however many stores you want, you can even compose multiple features together to create a more complex store.

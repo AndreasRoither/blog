@@ -1,0 +1,165 @@
+---
+title: 'Angular Signals and NgRx Signal Store: A Pagination State Management Feature'
+date: '2025-08-22T14:30:00+02:00'
+description: 'Pagination is a common feature that is used with paginated REST APIs. This posts shows how to implement a NGRX Signals Store Feature to keep track of pagination.'
+tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
+image: '/img/4_doe_1.jpg'
+draft: false
+series: 'Angular Signal Store: A Deep Dive with practical features'
+seriesPart: 3
+seriesTotal: 4
+---
+
+In the last post, I showed the dialog feature (you can find the previous post [here](/posts/4_angular_signal_store_2)). 
+Let's continue with the next feature: Pagination!
+
+
+## NGRX Signal Store Feature
+
+The pagination feature does not have many things to keep track of:
+- Current page
+- Page size
+- Total paging elements
+- Available page sizes
+
+Let's define the types and interfaces first:
+
+```typescript caption="pagination.store.ts"
+export type Paging = {
+    page: number;
+    size: number;
+};
+
+export interface PaginationInfo {
+    pagination: Paging;
+    totalPagingElements: number;
+    pageSizes: number[];
+}
+```
+
+Now we can create the feature:
+
+```typescript caption="pagination.store.ts"
+import { computed } from '@angular/core';
+import { patchState, signalStoreFeature, withComputed, withMethods, withState } from '@ngrx/signals';
+
+export function withPagination(state?: Partial<PaginationInfo>) {
+    let initialState: PaginationInfo = {
+        pagination: {
+            page: 0,
+            size: 25,
+        },
+        totalPagingElements: 0,
+        pageSizes: [10, 25, 50, 100],
+    };
+
+    if (state) {
+        initialState = {
+            ...initialState,
+            ...state
+        };
+    }
+
+    return signalStoreFeature(
+        withState<PaginationInfo>(initialState),
+        withComputed((state) => ({
+            totalPages: computed(() => Math.ceil(state.totalPagingElements() / state.pagination.size())),
+            hasNextPage: computed(() => state.pagination.page() < Math.ceil(state.totalPagingElements() / state.pagination.size()) - 1),
+            hasPreviousPage: computed(() => state.pagination.page() > 0),
+        })),
+        withMethods((store) => ({
+            setPagination(pagination: Paging) {
+                patchState(store, (state) => ({
+                    ...state,
+                    pagination,
+                }));
+            },
+            setPage(page: number) {
+                patchState(store, (state) => ({
+                    ...state,
+                    pagination: {
+                        ...state.pagination,
+                        page,
+                    },
+                }));
+            },
+            setPageSize(size: number, page = 0) {
+                patchState(store, (state) => ({
+                    ...state,
+                    pagination: {
+                        ...state.pagination,
+                        size,
+                        page,
+                    },
+                }));
+            },
+            setTotalElements(totalElements: number) {
+                patchState(store, (state) => ({
+                    ...state,
+                    totalPagingElements: totalElements,
+                }));
+            },
+        })),
+        withMethods((store) => ({
+            nextPage() {
+                if (store.hasNextPage()) {
+                    store.setPage(store.pagination.page() + 1);
+                }
+            },
+            previousPage() {
+                if (store.hasPreviousPage()) {
+                    store.setPage(store.pagination.page() - 1);
+                }
+            },
+        })),
+    );
+}
+```
+
+This is a pretty small feature, but it doesn't need much to keep track of the active state! 
+It does not keep track of the actual data on purpose! This makes it much easier to integrate with other stores regardless of where the data comes from (REST API, GraphQL, local data, etc.) or what it looks like.
+
+What a neat small little feature! 
+
+### Scope limitations
+
+You have probably already noticed that the `withMethods` is defined twice.
+This is necessary because of **TypeScript's function scope limitations**:
+
+```typescript
+// This wouldn't work - scope limitation
+withMethods((store) => ({
+    setPage(page: number) {  },
+    nextPage() {
+        // Error: setPage is not accessible here
+        this.setPage(store.pagination.page() + 1);
+    },
+}))
+```
+
+Each `withMethods` creates its own function scope. The store parameter in each call has access to:
+
+- First call: Base store + computed properties (from `withComputed`)
+- Second call: Base store + computed properties + methods from first `withMethods`
+
+That's a small limitation, but it is easy to work around it.
+
+
+## What's Next?
+
+We are going to create a http feature! 
+We will combine this with the previous pagination feature to create a paginated rest api store :)
+
+## More links to explore
+
+- [NgRx Signal Store Documentation](https://ngrx.io/guide/signals/signal-store)
+
+---
+
+That's all for now—hopefully, you found this post helpful and maybe you can use this pagination feature in your own Angular application :)
+
+<div className="w-full relative mt-12 mb-8 rounded-xl bg-gradient-to-r from-green-700 via-lime-600 to-emerald-500 p-1 shadow-xl">
+    <div className="rounded-lg bg-green-950 p-8 text-center">
+        <h3 className="mb-2 text-2xl font-bold text-white">Thank you for reading and have a nice 🍵❤️</h3>
+    </div>
+</div>
