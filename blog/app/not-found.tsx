@@ -15,7 +15,7 @@ export default function NotFound() {
 
 				<div className="w-24 h-1 bg-indigo-500 mb-8 rounded-full" />
 
-				<p className="text-lg text-gray-600 dark:text-gray-400 max-w-md mb-8">
+				<p className="text-lg text-gray-600 dark:text-gray-400 max-w-md mb-8 text-center">
 					Oops! The page you're looking for seems to have disapparated
 				</p>
 
