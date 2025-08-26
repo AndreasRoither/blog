@@ -1,0 +1,52 @@
+---
+title: 'Angular Signals and NgRx Signal Store: A HTTP State Management Feature'
+date: '2025-08-27T14:30:00+02:00'
+description: 'Continuing from the pagination feature, this http feature will be integrated with pagination to achieve a complex REST API state management.'
+tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
+image: '/img/4_sake_deer_1.jpg'
+draft: true
+series: 'Angular Signal Store: A Deep Dive with practical features'
+seriesPart: 4
+seriesTotal: 4
+---
+
+In the last post, I showed the pagination feature (you can find the previous post [here](/posts/4_angular_signal_store_3)). 
+We are going to use this feature to integrate it with the next feature: HTTP requests!
+
+
+## NGRX Signal Store Feature
+
+The http feature is a bit more complex as it has to keep track of many things at the same time:
+- Loading state
+- Error state
+- Data state
+- Entity state
+- Pagination state (we will reuse the pagination feature here)
+- Query parameters
+
+Let's define the types and interfaces first again:
+
+```typescript caption="pagination.store.ts"
+
+```
+
+Now we can create the feature:
+
+```typescript caption="pagination.store.ts"
+
+```
+
+
+## More links to explore
+
+- [NgRx Signal Store Documentation](https://ngrx.io/guide/signals/signal-store)
+
+---
+
+That's all for now—hopefully, you found this post helpful and maybe you can use this http feature in your own Angular application :)
+
+<div className="w-full relative mt-12 mb-8 rounded-xl bg-gradient-to-r from-green-700 via-lime-600 to-emerald-500 p-1 shadow-xl">
+    <div className="rounded-lg bg-green-950 p-8 text-center">
+        <h3 className="mb-2 text-2xl font-bold text-white">Thank you for reading and have a nice 🍵❤️</h3>
+    </div>
+</div>

@@ -1,9 +1,9 @@
 ---
 title: 'Angular Signals and NgRx Signal Store: A Pagination State Management Feature'
-date: '2025-08-22T14:30:00+02:00'
+date: '2025-08-26T15:30:00+02:00'
 description: 'Pagination is a common feature that is used with paginated REST APIs. This posts shows how to implement a NGRX Signals Store Feature to keep track of pagination.'
 tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
-image: '/img/4_doe_1.jpg'
+image: '/img/4_jellyfish_1.jpg'
 draft: false
 series: 'Angular Signal Store: A Deep Dive with practical features'
 seriesPart: 3
@@ -22,7 +22,7 @@ The pagination feature does not have many things to keep track of:
 - Total paging elements
 - Available page sizes
 
-Let's define the types and interfaces first:
+Let's define the types and interfaces first again:
 
 ```typescript caption="pagination.store.ts"
 export type Paging = {
@@ -117,7 +117,11 @@ export function withPagination(state?: Partial<PaginationInfo>) {
 ```
 
 This is a pretty small feature, but it doesn't need much to keep track of the active state! 
-It does not keep track of the actual data on purpose! This makes it much easier to integrate with other stores regardless of where the data comes from (REST API, GraphQL, local data, etc.) or what it looks like.
+This makes it much easier to integrate with other stores regardless of where the data comes from (REST API, GraphQL, local data, etc.) or what it looks like.
+
+Here is how some of the UI using the pagination store could look like:
+![Pagination Store](/img/4_pagination_store.png)
+
 
 What a neat small little feature! 
 
@@ -144,11 +148,12 @@ Each `withMethods` creates its own function scope. The store parameter in each c
 
 That's a small limitation, but it is easy to work around it.
 
-
 ## What's Next?
 
 We are going to create a http feature! 
-We will combine this with the previous pagination feature to create a paginated rest api store :)
+Combined with the pagination feature, this will allow us to create a paginated REST API state management store.
+
+And to illustrate how this can be used, we are going to create a mock service for querying pokemon data :)
 
 ## More links to explore
 
