@@ -41,7 +41,7 @@ export default function LoadingImage({ src, alt, title, className = "", forceLoa
       
       {/* error */}
       {hasError && (
-        <div className="bg-gray-100 dark:bg-gray-800 p-8 text-center rounded-lg">
+        <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-lg">
           <div className="text-gray-500 dark:text-gray-400 text-sm">
             Failed to load image
           </div>

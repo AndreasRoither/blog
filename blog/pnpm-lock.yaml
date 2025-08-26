@@ -29,6 +29,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      geist:
+        specifier: ^1.4.2
+        version: 1.4.2(next@15.2.4(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -940,6 +943,11 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  geist@1.4.2:
+    resolution: {integrity: sha512-OQUga/KUc8ueijck6EbtT07L4tZ5+TZgjw8PyWfxo16sL5FWk7gNViPNU8hgCFjy6bJi9yuTP+CRpywzaGN8zw==}
+    peerDependencies:
+      next: '>=13.2.0'
 
   get-tsconfig@4.10.1:
     resolution: {integrity: sha512-auHyJ4AgMz7vgS8Hp3N6HXSmlMdUyhSUrfBF16w153rxtLIEOE+HGqaBppczZvnHLqQJfiHotCYpNhl0lUROFQ==}
@@ -2327,6 +2335,10 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  geist@1.4.2(next@15.2.4(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)):
+    dependencies:
+      next: 15.2.4(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
 
   get-tsconfig@4.10.1:
     dependencies:
