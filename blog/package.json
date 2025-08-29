@@ -7,6 +7,7 @@
     "build": "pnpm generate-metadata && next build",
     "build:prod": "cross-env NODE_ENV=production pnpm generate-metadata && next build",
     "generate-metadata": "tsx scripts/generate-posts-metadata.ts",
+    "update-lastmodified": "tsx scripts/update-lastmodified.ts",
     "start": "next start",
     "lint": "next lint",
     "lint:b": "biome lint",

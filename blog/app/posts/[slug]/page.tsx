@@ -1,6 +1,7 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { notFound } from "next/navigation";
 
+import GithubProject from "@/components/GithubProject";
 import LoadingImage from "@/components/LoadingImage";
 import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
@@ -41,6 +42,10 @@ const prettyCodeOptions: Partial<RehypePrettyCodeOptions> = {
   onVisitHighlightedChars(node) {
     node.properties.className = ["word"];
   },
+};
+
+const components = {
+  GithubProject,
 };
 
 /**
@@ -138,8 +143,8 @@ export default async function PostPage({ params }: PostPageProps) {
   return (
     <SiteLayout>
       <div className="min-h-screen flex flex-col">
-        <div className="max-w-7xl mx-auto px-4 py-8 lg:flex lg:flex-row lg:gap-12 flex-grow">
-          <div className="hidden lg:block lg:w-16 flex-shrink-0">
+        <div className="mx-auto px-4 py-8 xl:flex xl:flex-row xl:gap-8 flex-grow max-w-[1600px]">
+          <div className="hidden xl:block xl:w-12 flex-shrink-0">
             <Link
               href="/"
               className="sticky top-24 text-blue-500 hover:underline dark:text-blue-400 text-sm"
@@ -148,11 +153,11 @@ export default async function PostPage({ params }: PostPageProps) {
             </Link>
           </div>
 
-          <article className="flex-grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-3xl w-full lg:w-auto">
+          <article className="flex-grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-none w-full xl:min-w-0 xl:max-w-4xl 2xl:max-w-5xl">
             {" "}
             <Link
               href="/"
-              className="lg:hidden text-blue-500 hover:underline mb-4 block dark:text-blue-400"
+              className="xl:hidden text-blue-500 hover:underline mb-4 block dark:text-blue-400"
             >
               ← cd ..
             </Link>
@@ -200,9 +205,10 @@ export default async function PostPage({ params }: PostPageProps) {
                 />
               </div>
             )}
-            <div className="prose lg:prose-xl dark:prose-invert max-w-none">
+            <div className="prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
               <MDXRemote
                 source={content}
+                components={components}
                 options={{
                   mdxOptions: {
                     remarkPlugins: [remarkGfm],
@@ -213,7 +219,44 @@ export default async function PostPage({ params }: PostPageProps) {
             </div>
           </article>
 
-          <aside className="hidden lg:block lg:w-64 xl:w-80 flex-shrink-0">
+          {/* Series navigation for medium screens (shows after article) */}
+          {seriesData && postIndexInSeries !== -1 && (
+            <div className="xl:hidden my-6 p-4 border rounded bg-muted not-prose">
+              <h3 className="text-base font-semibold mb-2">
+                <p>Part {post.seriesPart} of the series: </p>
+                <Link
+                  href={`/series/${seriesData.slug}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {seriesData.title}
+                </Link>
+              </h3>
+              <div className="flex justify-between text-sm">
+                {postIndexInSeries > 0 ? (
+                  <Link
+                    href={`/posts/${seriesData.posts[postIndexInSeries - 1].slug}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    <span className="">&larr; Previous</span>
+                  </Link>
+                ) : (
+                  <span className="opacity-50">No Previous entry</span>
+                )}
+                {postIndexInSeries < seriesData.posts.length - 1 ? (
+                  <Link
+                    href={`/posts/${seriesData.posts[postIndexInSeries + 1].slug}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    <span className="">Next &rarr;</span>
+                  </Link>
+                ) : (
+                  <span className="opacity-50">Next is not out yet!</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          <aside className="hidden xl:block xl:w-64 2xl:w-80 flex-shrink-0">
             {seriesData && postIndexInSeries !== -1 && (
               <div className="my-6 p-4 border rounded bg-muted not-prose">
                 <h3 className="text-base font-semibold mb-2">

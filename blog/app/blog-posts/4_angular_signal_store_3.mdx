@@ -1,8 +1,9 @@
 ---
 title: 'Angular Signals and NgRx Signal Store: A Pagination State Management Feature'
 date: '2025-08-26T15:30:00+02:00'
-description: 'Pagination is a common feature that is used with paginated REST APIs. This posts shows how to implement a NGRX Signals Store Feature to keep track of pagination.'
-tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
+lastModified: '2025-08-29T16:00:00+02:00'
+description: 'Pagination is a common feature that is used with paginated REST APIs. This post shows how to implement a NgRx Signals Store Feature to keep track of pagination.'
+tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript', 'pagination']
 image: '/img/4_jellyfish_1.jpg'
 draft: false
 series: 'Angular Signal Store: A Deep Dive with practical features'
@@ -13,10 +14,17 @@ seriesTotal: 4
 In the last post, I showed the dialog feature (you can find the previous post [here](/posts/4_angular_signal_store_2)). 
 Let's continue with the next feature: Pagination!
 
+As always, if you want to see the complete code checkout the github repository:
 
-## NGRX Signal Store Feature
+<GithubProject 
+  name="Angular Signal Store Examples" 
+  url="https://github.com/AndreasRoither/blog-projects/tree/main/angular/src/app/shared/blog/ngrx-store"
+  description="Complete examples and feature showcase"
+/>
 
-The pagination feature does not have many things to keep track of:
+## NgRx Signal Store Feature
+
+The pagination feature doesn't have many things to keep track of:
 - Current page
 - Page size
 - Total paging elements
@@ -119,11 +127,11 @@ export function withPagination(state?: Partial<PaginationInfo>) {
 This is a pretty small feature, but it doesn't need much to keep track of the active state! 
 This makes it much easier to integrate with other stores regardless of where the data comes from (REST API, GraphQL, local data, etc.) or what it looks like.
 
-Here is how some of the UI using the pagination store could look like:
+Here's how some of the UI using the pagination store could be like:
 ![Pagination Store](/img/4_pagination_store.png)
 
 
-What a neat small little feature! 
+What a neat little feature! 
 
 ### Scope limitations
 
@@ -146,18 +154,24 @@ Each `withMethods` creates its own function scope. The store parameter in each c
 - First call: Base store + computed properties (from `withComputed`)
 - Second call: Base store + computed properties + methods from first `withMethods`
 
-That's a small limitation, but it is easy to work around it.
+That's a small limitation, but it's easy to work around.
 
 ## What's Next?
 
-We are going to create a http feature! 
+We are going to create a HTTP feature! 
 Combined with the pagination feature, this will allow us to create a paginated REST API state management store.
 
-And to illustrate how this can be used, we are going to create a mock service for querying pokemon data :)
+And to illustrate how this can be used, we're going to create a mock service for querying Pokémon data :)
 
 ## More links to explore
 
 - [NgRx Signal Store Documentation](https://ngrx.io/guide/signals/signal-store)
+
+<GithubProject 
+  name="Angular Signal Store Examples" 
+  url="https://github.com/AndreasRoither/blog-projects/tree/main/angular/src/app/shared/blog/ngrx-store"
+  description="Complete examples and feature showcase"
+/>
 
 ---
 
