@@ -1,6 +1,7 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { notFound } from "next/navigation";
 
+import GithubProject from "@/components/GithubProject";
 import LoadingImage from "@/components/LoadingImage";
 import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
@@ -41,6 +42,10 @@ const prettyCodeOptions: Partial<RehypePrettyCodeOptions> = {
   onVisitHighlightedChars(node) {
     node.properties.className = ["word"];
   },
+};
+
+const components = {
+  GithubProject,
 };
 
 /**
@@ -203,6 +208,7 @@ export default async function PostPage({ params }: PostPageProps) {
             <div className="prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
               <MDXRemote
                 source={content}
+                components={components}
                 options={{
                   mdxOptions: {
                     remarkPlugins: [remarkGfm],
