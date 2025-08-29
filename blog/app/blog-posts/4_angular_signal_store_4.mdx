@@ -1,10 +1,9 @@
 ---
 title: 'Angular Signals and NgRx Signal Store: A HTTP State Management Feature'
-date: '2025-08-27T14:30:00+02:00'
+date: '2025-08-29T14:30:00+02:00'
 description: 'Continuing from the pagination feature, this http feature will be integrated with pagination to achieve a complex REST API state management.'
-tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
+tags: ['angular', 'NgRx', 'signal', 'store', 'state management', 'typescript', 'http']
 image: '/img/4_sake_deer_1.jpg'
-draft: true
 series: 'Angular Signal Store: A Deep Dive with practical features'
 seriesPart: 4
 seriesTotal: 4
@@ -14,7 +13,7 @@ In the last post, I showed the pagination feature (you can find the previous pos
 We are going to use this feature to integrate it with the next feature: HTTP requests!
 
 
-## NGRX Signal Store Feature
+## NgRx Signal Store Feature
 
 The http feature is a bit more complex as it has to keep track of many things at the same time:
 - Loading state
@@ -24,22 +23,632 @@ The http feature is a bit more complex as it has to keep track of many things at
 - Pagination state (we will reuse the pagination feature here)
 - Query parameters
 
-Let's define the types and interfaces first again:
+First let's define the service interface that our http feature will use to perform the actual http requests.
+The `Identifiable` types are used to ensure that these items have an identifier. 
+This helps with displaying data and is especially useful for tracking with `@for` loops.
 
-```typescript caption="pagination.store.ts"
+```typescript caption="http.feature.ts"
+export type Identifiable = {
+    id?: string | number;
+};
 
+export type NonNullIdentifiable<T> = T & {
+    id: string | number;
+};
+
+export interface ItemService<T extends Identifiable> {
+    create( item: T, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
+
+    update(item: NonNullIdentifiable<T>, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
+
+    delete(id: string | number, queryParams?: Record<string, unknown>): Observable<unknown>;
+
+    get(pageRequest: ItemPageRequest): Observable<HttpResponse<NonNullIdentifiable<T>[]>>;
+
+    getById(id: string | number, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
+}
 ```
 
-Now we can create the feature:
+These basic methods should cover the standard CRUD operations for our REST API. If needed, the stores can add additional methods on their own to extend the functionality.
+You may have noticed the `queryParams`, they are optional parameters that allow us to pass additional parameters to the service methods without having a fixed structure.
+
+
+Now let's define the state that our http feature will manage:
 
 ```typescript caption="pagination.store.ts"
+// convenience types for method parameters
+export type UpdateDeleteParams<T> = {
+    item: T;
+    queryParams?: Record<string, unknown>;
+};
 
+export type IdParams = {
+    id: string | number;
+    queryParams?: Record<string, unknown>;
+};
+
+export type MultipleIdParams = {
+    ids: (string | number)[];
+    queryParams?: Record<string, unknown>;
+};
+
+// state 
+
+type ErrorType = Error | string | null | undefined;
+
+export interface CrudLoadingState {
+    loading: {
+        create: boolean;
+        update: boolean;
+        delete: boolean;
+        get: boolean;
+        getById: boolean;
+        getByIds: boolean;
+    };
+    error: {
+        create: ErrorType;
+        update: ErrorType;
+        delete: ErrorType;
+        get: ErrorType;
+        getById: ErrorType;
+        getByIds: ErrorType;
+    };
+}
+
+export interface CRUDResourceState<T extends Identifiable> extends CrudLoadingState {
+    items: T[];
+    item?: T;
+}
 ```
 
+The loading and error state is not ideal but each operation can have its own state depending on how the store is used.
+For example, if you have a list view and a detail view, you might want to show loading and error states for both views independently (also means you only use one store).
+This should cover the basic use cases, for more complex scenarios you can always extend the state in your own store.
+
+> Before we dive into the code, a quick note on the entities.
+> There is a `withEntities` feature for the NgRx Signal Store to manage entity state. 
+> The reason I do not use it here is that my single source of truth is always the REST API. 
+> As such I do not want to update or add entities in the store, I have reasonably old data with new ones coming in from the API on page loads etc.
+> Your use case might be different, so feel free to adapt the code to your needs.
+
+Now we can create the feature, this is gonna be a bit longer and I will explain each section down below, so bear with me :)
+
+```typescript caption="pagination.store.ts"
+import { Injector, Type, computed, inject } from '@angular/core';
+import { patchState, signalStoreFeature, withComputed, withMethods, withProps, withState } from '@NgRx/signals';
+import { rxMethod } from '@NgRx/signals/rxjs-interop';
+import { catchError, debounceTime, forkJoin, map, mergeMap, of, pipe, switchMap, tap, throwError } from 'rxjs';
+import { withPagination } from './pagination.feature';
+
+export function withCRUDHttpStoreFeature<T extends Identifiable>(service: Type<ItemService<T>>) {
+    const initialState: CRUDResourceState<T> = {
+        items: [],
+        item: undefined,
+        loading: {
+            create: false,
+            update: false,
+            delete: false,
+            get: false,
+            getById: false,
+            getByIds: false,
+        },
+        error: {
+            create: null,
+            update: null,
+            delete: null,
+            get: null,
+            getById: null,
+            getByIds: null,
+        },
+    };
+
+    return signalStoreFeature(
+        withPagination(),
+        withProps(() => ({
+            _service: inject(service),
+            _injector: inject(Injector),
+        })),
+        withState(initialState),
+        withComputed((state) => ({
+            empty: computed(() => state.items().length === 0),
+            hasError: computed(() => Object.values(state.error()).some((error) => !!error)),
+            anyLoading: computed(() => Object.values(state.loading()).some((loading) => loading)),
+        })),
+        withMethods((store) => {
+            const _getAll = rxMethod<Record<string, unknown> | undefined>(
+                pipe(
+                    debounceTime(150),
+                    switchMap((queryParams) => {
+                        patchState(store, (state) => ({
+                            loading: { ...state.loading, get: true },
+                            error: { ...state.error, get: null },
+                        }));
+
+                        return store._service
+                        .get({ page: store.pagination().page, pageSize: store.pagination().size, queryParams: queryParams })
+                        .pipe(
+                            catchError((error) => {
+                                patchState(store, (state) => ({
+                                    loading: { ...state.loading, get: false },
+                                    error: { ...state.error, get: error },
+                                }));
+                                return of(undefined);
+                            }),
+                        );
+                    }),
+                    tap((data) => {
+                        if (!data) return;
+
+                        const body = data.body ?? [];
+
+                        patchState(store, (state) => ({
+                            ...(body.length > 0 ? { items: body } : { items: [] }),
+                            totalPagingElements: Number.parseInt(data.headers.get('X-Total-Count') ?? '0', 0),
+                            loading: { ...state.loading, get: false },
+                            error: { ...state.error, get: null },
+                        }));
+                    }),
+                ),
+            );
+
+            const _create = rxMethod<UpdateDeleteParams<T>>(
+                pipe(
+                    tap(() => {
+                        patchState(store, {
+                            loading: { ...store.loading(), create: true },
+                            error: { ...store.error(), create: null },
+                        });
+                    }),
+                    mergeMap(({ item, queryParams }) =>
+                        store._service.create(item, queryParams).pipe(
+                            catchError((error) => {
+                                patchState(store, {
+                                    loading: { ...store.loading(), create: false },
+                                    error: { ...store.error(), create: error },
+                                });
+                                return of(undefined);
+                            }),
+                        ),
+                    ),
+                    tap((data) => {
+                        patchState(store, (state) => ({
+                            ...(data && { items: [data, ...state.items] }),
+                            loading: { ...state.loading, create: false },
+                            error: { ...state.error, create: null },
+                        }));
+                    }),
+                ),
+            );
+
+            const _update = rxMethod<UpdateDeleteParams<NonNullIdentifiable<T>>>(
+                pipe(
+                    tap(() => {
+                        patchState(store, (state) => ({
+                            loading: { ...state.loading, update: true },
+                            error: { ...state.error, update: null },
+                        }));
+                    }),
+                    mergeMap(({ item, queryParams }) =>
+                        store._service.update(item, queryParams).pipe(
+                            catchError((error) => {
+                                patchState(store, {
+                                    loading: { ...store.loading(), update: false },
+                                    error: { ...store.error(), update: error },
+                                });
+                                return of(undefined);
+                            }),
+                        ),
+                    ),
+                    tap((data) => {
+                        if (store.item?.()?.id === data?.id) {
+                            patchState(store, {
+                                item: data,
+                            });
+                        }
+
+                        patchState(store, (state) => {
+                            const newState = {
+                                loading: { ...state.loading, update: false },
+                                error: { ...state.error, update: null },
+                            };
+                            if (!data?.id) return { ...newState };
+
+                            for (let i = 0; i < state.items.length; i++) {
+                                if (state.items[i].id === data.id) {
+                                    state.items[i] = data;
+
+                                    return {
+                                        ...newState,
+                                        items: [...state.items],
+                                    };
+                                }
+                            }
+
+                            return {
+                                ...newState,
+                            };
+                        });
+                    }),
+                ),
+            );
+
+            const _delete = rxMethod<IdParams>(
+                pipe(
+                    tap(() => {
+                        patchState(store, (state) => ({
+                            loading: { ...state.loading, delete: true },
+                            error: { ...state.error, delete: null },
+                        }));
+                    }),
+                    mergeMap(({ id, queryParams }) => {
+                        return store._service.delete(id, queryParams).pipe(
+                            map(() => id),
+                            catchError((error) => {
+                                patchState(store, {
+                                    loading: { ...store.loading(), delete: false },
+                                    error: { ...store.error(), delete: error },
+                                });
+                                return of(undefined);
+                            }),
+                        );
+                    }),
+                    tap((id) => {
+                        patchState(store, (state) => ({
+                            items: state.items.filter((item) => item.id !== id),
+                            loading: { ...state.loading, delete: false },
+                            error: { ...state.error, delete: null },
+                        }));
+                    }),
+                ),
+            );
+
+            const _getById = rxMethod<IdParams>(
+                pipe(
+                    tap(() => {
+                        patchState(store, (state) => ({
+                            loading: { ...state.loading, getById: true },
+                            error: { ...state.error, getById: null },
+                        }));
+                    }),
+                    switchMap(({ id, queryParams }) =>
+                        store._service.getById(id, queryParams).pipe(
+                            catchError((error) => {
+                                patchState(store, {
+                                    loading: { ...store.loading(), getById: false },
+                                    error: { ...store.error(), getById: error },
+                                });
+                                return of(undefined);
+                            }),
+                        ),
+                    ),
+                    tap((data) => {
+                        patchState(store, (state) => ({
+                            item: data,
+                            loading: { ...state.loading, getById: false },
+                            error: { ...state.error, getById: null },
+                        }));
+                    }),
+                ),
+            );
+
+            const _getByIds = rxMethod<MultipleIdParams>(
+                pipe(
+                    tap(() => {
+                        patchState(store, (state) => ({
+                            loading: { ...state.loading, getByIds: true },
+                            error: { ...state.error, getByIds: null },
+                        }));
+                    }),
+                    switchMap(({ ids, queryParams }) => {
+                        if (ids.length === 0) {
+                            patchState(store, (state) => ({
+                                loading: { ...state.loading, getByIds: false },
+                                error: { ...state.error, getByIds: null },
+                            }));
+                            return of([]);
+                        }
+
+                        const requests = ids.map((id) =>
+                            store._service.getById(id, queryParams).pipe(
+                                catchError((error) => {
+                                    return of(null);
+                                }),
+                            ),
+                        );
+
+                        return forkJoin(requests).pipe(
+                            map((results: (NonNullIdentifiable<T> | null)[]) => 
+                                results.filter((item): item is NonNullIdentifiable<T> => item !== null)
+                            ),
+                            catchError((error) => {
+                                patchState(store, {
+                                    loading: { ...store.loading(), getByIds: false },
+                                    error: { ...store.error(), getByIds: error },
+                                });
+                                return of([]);
+                            }),
+                        );
+                    }),
+                    tap((data) => {
+                        patchState(store, (state) => {
+                            const existingIds = new Set(state.items.map((item) => item.id));
+                            const newItems = data.filter((item) => !existingIds.has(item.id));
+
+                            return {
+                                items: [...state.items, ...newItems],
+                                loading: { ...state.loading, getByIds: false },
+                                error: { ...state.error, getByIds: null },
+                            };
+                        });
+                    }),
+                ),
+            );
+
+            return {
+                create: (item: T, queryParams?: Record<string, unknown>) => _create({ item, queryParams }),
+
+                update: (item: NonNullIdentifiable<T>, queryParams?: Record<string, unknown>) => _update({ item, queryParams }),
+
+                delete: (id: string | number, queryParams?: Record<string, unknown>) => _delete({ id, queryParams }),
+
+                getAll: (queryParams?: Record<string, unknown>) => _getAll(queryParams),
+
+                getById: (id: string | number, queryParams?: Record<string, unknown>) => _getById({ id, queryParams }),
+
+                getByIds: (ids: (string | number)[], queryParams?: Record<string, unknown>) => _getByIds({ ids, queryParams }),
+            };
+        }),
+        withMethods((store) => ({
+            deleteList(items: T[], queryParams?: Record<string, unknown>) {
+                for (const entity of items) {
+                    if (!entity.id) continue;
+
+                    store.delete(entity.id, queryParams);
+                }
+            },
+        })),
+        withHooks((store) => ({
+            onInit() {
+                toObservable(store.pagination)
+                    .pipe(takeUntilDestroyed())
+                    .subscribe((value) => {
+                        store.getAll();
+                    });
+            },
+        })),
+    );
+}
+```
+
+And here is how you would use this feature in a store:
+
+```typescript caption="item.store.ts"
+export const ItemHttpStore = signalStore(
+    { providedIn: 'root' }, 
+    withCRUDHttpStoreFeature<Item>(Service)
+);
+```
+
+## Breaking Down the HTTP Feature
+
+Let's analyze this complex store feature step by step to understand its architecture and flow:
+
+### 1. Store Architecture & Composition
+
+The feature uses **composition over inheritance** (also the principle of the features and stores) through NgRx Signal Store's feature system:
+
+```typescript
+return signalStoreFeature(
+    withPagination(),           // Adds pagination functionality
+    withProps(() => ({ ... })), // Injects dependencies
+    withState(initialState),    // Defines the state structure
+    withComputed(...),          // Adds computed values
+    withMethods(...),           // Adds CRUD operations
+    withHooks(...)              // Lifecycle hooks
+);
+```
+The withProps section injects the service and injector, making them available in the store methods by just using the `service: Type<ItemService<T>>` type.
+As long as the service is provided in the module or component or root, it will be injected correctly.
+
+
+This layered approach allows you to mix and match features - as mentioned before, the `withPagination()` can also be used in other stores!
+
+### 2. State Structure & Management
+
+The state is designed to track multiple concurrent operations since in my use case I cover both overview and detail views in a single store.
+
+```typescript
+const initialState: CRUDResourceState<T> = {
+    items: [],           // Collection of entities
+    item: undefined,     // Single entity (for detail views)
+    loading: {           // Per-operation loading states
+        create: false, update: false, delete: false,
+        get: false, getById: false, getByIds: false,
+    },
+    error: {            // Per-operation error states
+        create: null, update: null, delete: null,
+        get: null, getById: null, getByIds: null,
+    },
+};
+```
+
+**Why separate loading/error states?** 
+This approach allows the UI to show specific feedback. 
+For example, you can show a spinner on the "Create" button while still allowing users to interact with the list or view details.
+
+### 3. Computed Values & Derived State
+
+The `withComputed` section creates reactive derived state:
+
+```typescript
+withComputed((state) => ({
+    empty: computed(() => state.items().length === 0),
+    hasError: computed(() => Object.values(state.error()).some((error) => !!error)),
+    anyLoading: computed(() => Object.values(state.loading()).some((loading) => loading)),
+}))
+```
+
+**About the `empty` computed:** While it might seem redundant (you could check `items().length === 0` directly in templates), having this computed value provides several benefits:
+- **Semantic clarity**: `store.empty()` is more readable than `store.items().length === 0`
+- **Performance**: Angular's change detection can optimize this computed value
+- **Consistency**: All UI state queries go through the store interface
+- **Future extensibility**: You might later want to consider items "empty" based on other criteria (e.g., filtered results)
+
+> There is a bit of ambiguity in the term "empty" - since we only check for items and not item presence. 
+> I never use empty to check for single item presence, so this is not an issue in my use case, but be aware of this when adapting the code. 
+
+### 4. RxJS Method Pattern & Error Handling
+
+Each CRUD operation follows a consistent pattern using `rxMethod`:
+
+```typescript
+const _getAll = rxMethod<Record<string, unknown> | undefined>(
+    pipe(
+        debounceTime(150),           // Prevents excessive API calls
+        switchMap((queryParams) => { // Cancels previous requests
+            // 1. Set loading state
+            patchState(store, (state) => ({
+                loading: { ...state.loading, get: true },
+                error: { ...state.error, get: null },
+            }));
+
+            // 2. Make API call
+            return store._service.get({...}).pipe(
+                catchError((error) => {
+                    // 3. Handle errors to not break the stream
+                    patchState(store, (state) => ({
+                        loading: { ...state.loading, get: false },
+                        error: { ...state.error, get: error },
+                    }));
+                    return of(undefined); // Continue the stream
+                }),
+            );
+        }),
+        tap((data) => {
+            // 4. Update state with results
+            if (!data) return;
+            // ... update logic
+        }),
+    ),
+);
+```
+
+**Key RxJS operators explained:**
+- `debounceTime(150)`: Waits 150ms after the last call before executing - prevents rapid-fire API calls (e.g., during typing)
+- `switchMap`: Cancels previous HTTP requests if a new one starts - very useful for search/pagination
+- `mergeMap` (in create/update): Allows multiple concurrent operations
+- `catchError`: Ensures errors don't break the stream and updates error state
+
+If you have this pattern down, you can easily adapt it for other operations! All in all I think this is a pretty neat approach.
+
+### 5. State Update Patterns
+
+The state update is pretty much always the same with minor variations depending on the operation.
+
+We prepend new items so they appear at the top of lists:
+```typescript
+tap((data) => {
+    patchState(store, (state) => ({
+        ...(data && { items: [data, ...state.items] }), // Prepend new item
+        loading: { ...state.loading, create: false },
+        error: { ...state.error, create: null },
+    }));
+}),
+```
+
+And update existing items / item like this:
+```typescript
+// update the single item if it exists
+if (store.item?.()?.id === data?.id) {
+    patchState(store, { item: data });
+}
+
+// find and update in the items array
+for (let i = 0; i < state.items.length; i++) {
+    if (state.items[i].id === data.id) {
+        state.items[i] = data;
+        return { ...newState, items: [...state.items] };
+    }
+}
+```
+
+### 6. Bulk Operations & Deduplication
+
+Some of the REST APIs I have do not support bulk fetching by IDs, so I combine multiple requests with `forkJoin`:
+
+```typescript
+const requests = ids.map((id) =>
+    store._service.getById(id, queryParams).pipe(
+        catchError((error) => of(null)), // Individual failures don't break the batch
+    ),
+);
+
+return forkJoin(requests).pipe(
+    map((results) => 
+        results.filter((item): item is NonNullIdentifiable<T> => item !== null)
+    ),
+    // ...
+    tap((data) => {
+        patchState(store, (state) => {
+            const existingIds = new Set(state.items.map((item) => item.id));
+            const newItems = data.filter((item) => !existingIds.has(item.id));
+            return {
+                items: [...state.items, ...newItems], // add new items
+                // ...
+            };
+        });
+    }),
+);
+```
+
+This prevents duplicate items and handles partial failures but I do not have a real way to show the user which IDs failed, this might be a future improvement.
+
+### 7. Lifecycle Integration
+
+Lastly, the `withHooks` connects pagination changes to data fetching:
+
+```typescript
+withHooks((store) => ({
+    onInit() {
+        toObservable(store.pagination)
+            .pipe(takeUntilDestroyed())
+            .subscribe(() => {
+                store.getAll(); // Refetch when page/size changes
+            });
+    },
+}))
+```
+
+This creates a reactive data flow where pagination changes automatically trigger new data fetches.
+As pagination is only used for list views, single items are not affected.
+
+### Strengths and Trade-offs
+
+Here is my two cents on this feature:
+- It is a bit complex, but it covers a lot of use cases and is very flexible.
+- The state is granular enough to provide UI feedback for each operation.
+- The RxJS functions make this very powerful and abstract away a lot of logic, especially with error handling and request management.
+
+Some of the potential trade-offs:
+- The state structure might be overkill for simple use cases. If you have read-only data you won't use half of the functionality.
+- The error handling is basic. You might want to extend it to provide more context or retry mechanisms.
+- The `getByIds` method can be inefficient if you have a lot of IDs to fetch. If your API supports bulk fetching, consider adding a dedicated method.
+- The `withEntities` feature of NgRx Signal Store is not used here. If you need entity management with possible offline capabilities, consider integrating it.
+
+Here are some ideas for future improvements:
+- Add offline support with caching and synchronization.
+- Add retry mechanisms for failed requests.
+- Each operation could be a separate feature for more modularity (only use what you need), but this would increase complexity in usage.
+- Add support for WebSockets or real-time updates.
+
+
+Overall I think this is a pretty solid foundation for HTTP state management that can be adapted to many use cases.
+I think it is not perfect but works well for my needs and I hope you can find some inspiration in it!
 
 ## More links to explore
 
-- [NgRx Signal Store Documentation](https://ngrx.io/guide/signals/signal-store)
+- [NgRx Signal Store Documentation](https://NgRx.io/guide/signals/signal-store)
+- [NgRx Signal Store withEntities](https://NgRx.io/guide/signals/signal-store/entity-management)
 
 ---
 

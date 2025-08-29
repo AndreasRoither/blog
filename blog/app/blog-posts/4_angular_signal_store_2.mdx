@@ -1,8 +1,8 @@
 ---
 title: 'Angular Signals and NgRx Signal Store: A Dialog State Management Feature'
 date: '2025-08-21T12:00:00+02:00'
-lastModified: '2025-08-22T12:00:00+02:00'
-description: 'Dialog state management is a common feature in many applications. This posts shows how to implement a NGRX Signals Store Feature for exactly that.'
+lastModified: '2025-08-29T10:00:00+02:00'
+description: 'Dialog state management is a common feature in many applications. This post shows how to implement a NGRX Signals Store Feature for exactly that.'
 tags: ['angular', 'ngrx', 'signal', 'store', 'state management', 'typescript']
 image: '/img/4_doe_1.jpg'
 draft: false
@@ -17,7 +17,7 @@ Let's step this up a bit :)
 
 ## NGRX Signal Store Feature
 
-I did not show you the best part of the `ngrx/signals` package yet, and that is the `signalStoreFeature` function, arguably one of my favorite things about this library.
+I haven't shown you the best part of the `ngrx/signals` package yet, and that is the `signalStoreFeature` function, arguably one of my favorite things about this library.
 It basically allows you to create a feature that can be used in however many stores you want, you can even compose multiple features together to create a more complex store.
 
 Let's reuse the matcha counter example from the previous post and turn it into a feature:
@@ -117,7 +117,7 @@ export interface ClosePreventionOptions {
 }
 ```
 
-These are pretty self explanatory, I want to have as much flexibility as possible to avoid unforseen issues in the future.
+These are pretty self-explanatory. I want to have as much flexibility as possible to avoid unforeseen issues in the future.
 Now we can implement the dialog store feature using the `signalStoreFeature` function:
 
 ```typescript caption="dialog.store.feature.ts"
@@ -257,7 +257,7 @@ This feature can now be used to handle dialog states for any dialog with any con
 
 ## What's Next?
 
-Pagination! This is a common feature in many applications, typically a REST API will return a paginated response, and combined with http operations, the store will become pretty powerful.
+Pagination! This is a common feature in many applications. Typically, a REST API will return a paginated response, and combined with HTTP operations, the store will become pretty powerful.
 
 
 ## More links to explore
