@@ -9,9 +9,18 @@ seriesPart: 4
 seriesTotal: 4
 ---
 
+import GithubProject from "@/components/GithubProject";
+
 In the last post, I showed the pagination feature (you can find the previous post [here](/posts/4_angular_signal_store_3)). 
 We are going to use this feature to integrate it with the next feature: HTTP requests!
 
+As always, if you want to see the complete code checkout the github repository:
+
+<GithubProject 
+  name="Angular Signal Store Examples" 
+  url="https://github.com/AndreasRoither/blog-projects/tree/main/angular/src/app/shared/blog/ngrx-store"
+  description="Complete examples and feature showcase"
+/>
 
 ## NgRx Signal Store Feature
 
@@ -37,15 +46,15 @@ export type NonNullIdentifiable<T> = T & {
 };
 
 export interface ItemService<T extends Identifiable> {
-    create( item: T, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
+  create(item: T, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
 
-    update(item: NonNullIdentifiable<T>, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
+  update(item: NonNullIdentifiable<T>, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
 
-    delete(id: string | number, queryParams?: Record<string, unknown>): Observable<unknown>;
+  delete(id: string | number, queryParams?: Record<string, unknown>): Observable<unknown>;
 
-    get(pageRequest: ItemPageRequest): Observable<HttpResponse<NonNullIdentifiable<T>[]>>;
+  get(page: number, size: number, queryParams?: Record<string, unknown>): Observable<HttpResponse<NonNullIdentifiable<T>[]>>;
 
-    getById(id: string | number, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
+  getById(id: string | number, queryParams?: Record<string, unknown>): Observable<NonNullIdentifiable<T>>;
 }
 ```
 
@@ -97,7 +106,7 @@ export interface CrudLoadingState {
 
 export interface CRUDResourceState<T extends Identifiable> extends CrudLoadingState {
     items: T[];
-    item?: T;
+    item: T | undefined;
 }
 ```
 
@@ -114,309 +123,311 @@ This should cover the basic use cases, for more complex scenarios you can always
 Now we can create the feature, this is gonna be a bit longer and I will explain each section down below, so bear with me :)
 
 ```typescript caption="pagination.store.ts"
-import { Injector, Type, computed, inject } from '@angular/core';
-import { patchState, signalStoreFeature, withComputed, withMethods, withProps, withState } from '@NgRx/signals';
+import { HttpResponse } from '@angular/common/http';
+import { computed, inject, Injector, Type } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from "@angular/core/rxjs-interop";
+import { patchState, signalStoreFeature, withComputed, withHooks, withMethods, withProps, withState } from '@NgRx/signals';
 import { rxMethod } from '@NgRx/signals/rxjs-interop';
-import { catchError, debounceTime, forkJoin, map, mergeMap, of, pipe, switchMap, tap, throwError } from 'rxjs';
-import { withPagination } from './pagination.feature';
+import { catchError, debounceTime, forkJoin, map, mergeMap, Observable, of, pipe, switchMap, tap } from 'rxjs';
+import { withPagination } from './pagination.store.feature';
 
 export function withCRUDHttpStoreFeature<T extends Identifiable>(service: Type<ItemService<T>>) {
-    const initialState: CRUDResourceState<T> = {
-        items: [],
-        item: undefined,
-        loading: {
-            create: false,
-            update: false,
-            delete: false,
-            get: false,
-            getById: false,
-            getByIds: false,
-        },
-        error: {
-            create: null,
-            update: null,
-            delete: null,
-            get: null,
-            getById: null,
-            getByIds: null,
-        },
-    };
+  const initialState: CRUDResourceState<T> = {
+    items: [],
+    item: undefined,
+    loading: {
+      create: false,
+      update: false,
+      delete: false,
+      get: false,
+      getById: false,
+      getByIds: false,
+    },
+    error: {
+      create: null,
+      update: null,
+      delete: null,
+      get: null,
+      getById: null,
+      getByIds: null,
+    },
+  };
 
-    return signalStoreFeature(
-        withPagination(),
-        withProps(() => ({
-            _service: inject(service),
-            _injector: inject(Injector),
-        })),
-        withState(initialState),
-        withComputed((state) => ({
-            empty: computed(() => state.items().length === 0),
-            hasError: computed(() => Object.values(state.error()).some((error) => !!error)),
-            anyLoading: computed(() => Object.values(state.loading()).some((loading) => loading)),
-        })),
-        withMethods((store) => {
-            const _getAll = rxMethod<Record<string, unknown> | undefined>(
-                pipe(
-                    debounceTime(150),
-                    switchMap((queryParams) => {
-                        patchState(store, (state) => ({
-                            loading: { ...state.loading, get: true },
-                            error: { ...state.error, get: null },
-                        }));
+  return signalStoreFeature(
+    withPagination(),
+    withProps(() => ({
+      _service: inject(service),
+      _injector: inject(Injector),
+    })),
+    withState(initialState),
+    withComputed((state) => ({
+      empty: computed(() => state.items().length === 0),
+      hasError: computed(() => Object.values(state.error()).some((error) => !!error)),
+      anyLoading: computed(() => Object.values(state.loading()).some((loading) => loading)),
+    })),
+    withMethods((store) => {
+      const _getAll = rxMethod<Record<string, unknown> | undefined>(
+        pipe(
+          debounceTime(150),
+          switchMap((queryParams) => {
+            patchState(store, (state) => ({
+              loading: { ...state.loading, get: true },
+              error: { ...state.error, get: null },
+            }));
 
-                        return store._service
-                        .get({ page: store.pagination().page, pageSize: store.pagination().size, queryParams: queryParams })
-                        .pipe(
-                            catchError((error) => {
-                                patchState(store, (state) => ({
-                                    loading: { ...state.loading, get: false },
-                                    error: { ...state.error, get: error },
-                                }));
-                                return of(undefined);
-                            }),
-                        );
-                    }),
-                    tap((data) => {
-                        if (!data) return;
+            return store._service
+              .get(store.pagination().page, store.pagination().size, queryParams)
+              .pipe(
+                catchError((error) => {
+                  patchState(store, (state) => ({
+                    loading: { ...state.loading, get: false },
+                    error: { ...state.error, get: error },
+                  }));
+                  return of(undefined);
+                }),
+              );
+          }),
+          tap((data) => {
+            if (!data) return;
 
-                        const body = data.body ?? [];
+            const body = data.body ?? [];
 
-                        patchState(store, (state) => ({
-                            ...(body.length > 0 ? { items: body } : { items: [] }),
-                            totalPagingElements: Number.parseInt(data.headers.get('X-Total-Count') ?? '0', 0),
-                            loading: { ...state.loading, get: false },
-                            error: { ...state.error, get: null },
-                        }));
-                    }),
-                ),
-            );
+            patchState(store, (state) => ({
+              ...(body.length > 0 ? { items: body } : { items: [] }),
+              totalPagingElements: Number.parseInt(data.headers.get('X-Total-Count') ?? '0', 0),
+              loading: { ...state.loading, get: false },
+              error: { ...state.error, get: null },
+            }));
+          }),
+        ),
+      );
 
-            const _create = rxMethod<UpdateDeleteParams<T>>(
-                pipe(
-                    tap(() => {
-                        patchState(store, {
-                            loading: { ...store.loading(), create: true },
-                            error: { ...store.error(), create: null },
-                        });
-                    }),
-                    mergeMap(({ item, queryParams }) =>
-                        store._service.create(item, queryParams).pipe(
-                            catchError((error) => {
-                                patchState(store, {
-                                    loading: { ...store.loading(), create: false },
-                                    error: { ...store.error(), create: error },
-                                });
-                                return of(undefined);
-                            }),
-                        ),
-                    ),
-                    tap((data) => {
-                        patchState(store, (state) => ({
-                            ...(data && { items: [data, ...state.items] }),
-                            loading: { ...state.loading, create: false },
-                            error: { ...state.error, create: null },
-                        }));
-                    }),
-                ),
-            );
+      const _create = rxMethod<UpdateDeleteParams<T>>(
+        pipe(
+          tap(() => {
+            patchState(store, {
+              loading: { ...store.loading(), create: true },
+              error: { ...store.error(), create: null },
+            });
+          }),
+          mergeMap(({ item, queryParams }) =>
+            store._service.create(item, queryParams).pipe(
+              catchError((error) => {
+                patchState(store, {
+                  loading: { ...store.loading(), create: false },
+                  error: { ...store.error(), create: error },
+                });
+                return of(undefined);
+              }),
+            ),
+          ),
+          tap((data) => {
+            patchState(store, (state) => ({
+              ...(data && { items: [data, ...state.items] }),
+              loading: { ...state.loading, create: false },
+              error: { ...state.error, create: null },
+            }));
+          }),
+        ),
+      );
 
-            const _update = rxMethod<UpdateDeleteParams<NonNullIdentifiable<T>>>(
-                pipe(
-                    tap(() => {
-                        patchState(store, (state) => ({
-                            loading: { ...state.loading, update: true },
-                            error: { ...state.error, update: null },
-                        }));
-                    }),
-                    mergeMap(({ item, queryParams }) =>
-                        store._service.update(item, queryParams).pipe(
-                            catchError((error) => {
-                                patchState(store, {
-                                    loading: { ...store.loading(), update: false },
-                                    error: { ...store.error(), update: error },
-                                });
-                                return of(undefined);
-                            }),
-                        ),
-                    ),
-                    tap((data) => {
-                        if (store.item?.()?.id === data?.id) {
-                            patchState(store, {
-                                item: data,
-                            });
-                        }
+      const _update = rxMethod<UpdateDeleteParams<NonNullIdentifiable<T>>>(
+        pipe(
+          tap(() => {
+            patchState(store, (state) => ({
+              loading: { ...state.loading, update: true },
+              error: { ...state.error, update: null },
+            }));
+          }),
+          mergeMap(({ item, queryParams }) =>
+            store._service.update(item, queryParams).pipe(
+              catchError((error) => {
+                patchState(store, {
+                  loading: { ...store.loading(), update: false },
+                  error: { ...store.error(), update: error },
+                });
+                return of(undefined);
+              }),
+            ),
+          ),
+          tap((data) => {
+            if (store.item?.()?.id === data?.id) {
+              patchState(store, {
+                item: data,
+              });
+            }
 
-                        patchState(store, (state) => {
-                            const newState = {
-                                loading: { ...state.loading, update: false },
-                                error: { ...state.error, update: null },
-                            };
-                            if (!data?.id) return { ...newState };
+            patchState(store, (state) => {
+              const newState = {
+                loading: { ...state.loading, update: false },
+                error: { ...state.error, update: null },
+              };
+              if (!data?.id) return { ...newState };
 
-                            for (let i = 0; i < state.items.length; i++) {
-                                if (state.items[i].id === data.id) {
-                                    state.items[i] = data;
+              for (let i = 0; i < state.items.length; i++) {
+                if (state.items[i].id === data.id) {
+                  state.items[i] = data;
 
-                                    return {
-                                        ...newState,
-                                        items: [...state.items],
-                                    };
-                                }
-                            }
-
-                            return {
-                                ...newState,
-                            };
-                        });
-                    }),
-                ),
-            );
-
-            const _delete = rxMethod<IdParams>(
-                pipe(
-                    tap(() => {
-                        patchState(store, (state) => ({
-                            loading: { ...state.loading, delete: true },
-                            error: { ...state.error, delete: null },
-                        }));
-                    }),
-                    mergeMap(({ id, queryParams }) => {
-                        return store._service.delete(id, queryParams).pipe(
-                            map(() => id),
-                            catchError((error) => {
-                                patchState(store, {
-                                    loading: { ...store.loading(), delete: false },
-                                    error: { ...store.error(), delete: error },
-                                });
-                                return of(undefined);
-                            }),
-                        );
-                    }),
-                    tap((id) => {
-                        patchState(store, (state) => ({
-                            items: state.items.filter((item) => item.id !== id),
-                            loading: { ...state.loading, delete: false },
-                            error: { ...state.error, delete: null },
-                        }));
-                    }),
-                ),
-            );
-
-            const _getById = rxMethod<IdParams>(
-                pipe(
-                    tap(() => {
-                        patchState(store, (state) => ({
-                            loading: { ...state.loading, getById: true },
-                            error: { ...state.error, getById: null },
-                        }));
-                    }),
-                    switchMap(({ id, queryParams }) =>
-                        store._service.getById(id, queryParams).pipe(
-                            catchError((error) => {
-                                patchState(store, {
-                                    loading: { ...store.loading(), getById: false },
-                                    error: { ...store.error(), getById: error },
-                                });
-                                return of(undefined);
-                            }),
-                        ),
-                    ),
-                    tap((data) => {
-                        patchState(store, (state) => ({
-                            item: data,
-                            loading: { ...state.loading, getById: false },
-                            error: { ...state.error, getById: null },
-                        }));
-                    }),
-                ),
-            );
-
-            const _getByIds = rxMethod<MultipleIdParams>(
-                pipe(
-                    tap(() => {
-                        patchState(store, (state) => ({
-                            loading: { ...state.loading, getByIds: true },
-                            error: { ...state.error, getByIds: null },
-                        }));
-                    }),
-                    switchMap(({ ids, queryParams }) => {
-                        if (ids.length === 0) {
-                            patchState(store, (state) => ({
-                                loading: { ...state.loading, getByIds: false },
-                                error: { ...state.error, getByIds: null },
-                            }));
-                            return of([]);
-                        }
-
-                        const requests = ids.map((id) =>
-                            store._service.getById(id, queryParams).pipe(
-                                catchError((error) => {
-                                    return of(null);
-                                }),
-                            ),
-                        );
-
-                        return forkJoin(requests).pipe(
-                            map((results: (NonNullIdentifiable<T> | null)[]) => 
-                                results.filter((item): item is NonNullIdentifiable<T> => item !== null)
-                            ),
-                            catchError((error) => {
-                                patchState(store, {
-                                    loading: { ...store.loading(), getByIds: false },
-                                    error: { ...store.error(), getByIds: error },
-                                });
-                                return of([]);
-                            }),
-                        );
-                    }),
-                    tap((data) => {
-                        patchState(store, (state) => {
-                            const existingIds = new Set(state.items.map((item) => item.id));
-                            const newItems = data.filter((item) => !existingIds.has(item.id));
-
-                            return {
-                                items: [...state.items, ...newItems],
-                                loading: { ...state.loading, getByIds: false },
-                                error: { ...state.error, getByIds: null },
-                            };
-                        });
-                    }),
-                ),
-            );
-
-            return {
-                create: (item: T, queryParams?: Record<string, unknown>) => _create({ item, queryParams }),
-
-                update: (item: NonNullIdentifiable<T>, queryParams?: Record<string, unknown>) => _update({ item, queryParams }),
-
-                delete: (id: string | number, queryParams?: Record<string, unknown>) => _delete({ id, queryParams }),
-
-                getAll: (queryParams?: Record<string, unknown>) => _getAll(queryParams),
-
-                getById: (id: string | number, queryParams?: Record<string, unknown>) => _getById({ id, queryParams }),
-
-                getByIds: (ids: (string | number)[], queryParams?: Record<string, unknown>) => _getByIds({ ids, queryParams }),
-            };
-        }),
-        withMethods((store) => ({
-            deleteList(items: T[], queryParams?: Record<string, unknown>) {
-                for (const entity of items) {
-                    if (!entity.id) continue;
-
-                    store.delete(entity.id, queryParams);
+                  return {
+                    ...newState,
+                    items: [...state.items],
+                  };
                 }
-            },
-        })),
-        withHooks((store) => ({
-            onInit() {
-                toObservable(store.pagination)
-                    .pipe(takeUntilDestroyed())
-                    .subscribe((value) => {
-                        store.getAll();
-                    });
-            },
-        })),
-    );
+              }
+
+              return {
+                ...newState,
+              };
+            });
+          }),
+        ),
+      );
+
+      const _delete = rxMethod<IdParams>(
+        pipe(
+          tap(() => {
+            patchState(store, (state) => ({
+              loading: { ...state.loading, delete: true },
+              error: { ...state.error, delete: null },
+            }));
+          }),
+          mergeMap(({ id, queryParams }) => {
+            return store._service.delete(id, queryParams).pipe(
+              map(() => id),
+              catchError((error) => {
+                patchState(store, {
+                  loading: { ...store.loading(), delete: false },
+                  error: { ...store.error(), delete: error },
+                });
+                return of(undefined);
+              }),
+            );
+          }),
+          tap((id) => {
+            patchState(store, (state) => ({
+              items: state.items.filter((item) => item.id !== id),
+              loading: { ...state.loading, delete: false },
+              error: { ...state.error, delete: null },
+            }));
+          }),
+        ),
+      );
+
+      const _getById = rxMethod<IdParams>(
+        pipe(
+          tap(() => {
+            patchState(store, (state) => ({
+              loading: { ...state.loading, getById: true },
+              error: { ...state.error, getById: null },
+            }));
+          }),
+          switchMap(({ id, queryParams }) =>
+            store._service.getById(id, queryParams).pipe(
+              catchError((error) => {
+                patchState(store, {
+                  loading: { ...store.loading(), getById: false },
+                  error: { ...store.error(), getById: error },
+                });
+                return of(undefined);
+              }),
+            ),
+          ),
+          tap((data) => {
+            patchState(store, (state) => ({
+              item: data,
+              loading: { ...state.loading, getById: false },
+              error: { ...state.error, getById: null },
+            }));
+          }),
+        ),
+      );
+
+      const _getByIds = rxMethod<MultipleIdParams>(
+        pipe(
+          tap(() => {
+            patchState(store, (state) => ({
+              loading: { ...state.loading, getByIds: true },
+              error: { ...state.error, getByIds: null },
+            }));
+          }),
+          switchMap(({ ids, queryParams }) => {
+            if (ids.length === 0) {
+              patchState(store, (state) => ({
+                loading: { ...state.loading, getByIds: false },
+                error: { ...state.error, getByIds: null },
+              }));
+              return of([]);
+            }
+
+            const requests = ids.map((id) =>
+              store._service.getById(id, queryParams).pipe(
+                catchError((error) => {
+                  return of(null);
+                }),
+              ),
+            );
+
+            return forkJoin(requests).pipe(
+              map((results: (NonNullIdentifiable<T> | null)[]) =>
+                results.filter((item): item is NonNullIdentifiable<T> => item !== null)
+              ),
+              catchError((error) => {
+                patchState(store, {
+                  loading: { ...store.loading(), getByIds: false },
+                  error: { ...store.error(), getByIds: error },
+                });
+                return of([]);
+              }),
+            );
+          }),
+          tap((data) => {
+            patchState(store, (state) => {
+              const existingIds = new Set(state.items.map((item) => item.id));
+              const newItems = data.filter((item) => !existingIds.has(item.id));
+
+              return {
+                items: [...state.items, ...newItems],
+                loading: { ...state.loading, getByIds: false },
+                error: { ...state.error, getByIds: null },
+              };
+            });
+          }),
+        ),
+      );
+
+      return {
+        create: (item: T, queryParams?: Record<string, unknown>) => _create({ item, queryParams }),
+
+        update: (item: NonNullIdentifiable<T>, queryParams?: Record<string, unknown>) => _update({ item, queryParams }),
+
+        delete: (id: string | number, queryParams?: Record<string, unknown>) => _delete({ id, queryParams }),
+
+        getAll: (queryParams?: Record<string, unknown>) => _getAll(queryParams),
+
+        getById: (id: string | number, queryParams?: Record<string, unknown>) => _getById({ id, queryParams }),
+
+        getByIds: (ids: (string | number)[], queryParams?: Record<string, unknown>) => _getByIds({ ids, queryParams }),
+      };
+    }),
+    withMethods((store) => ({
+      deleteList(items: T[], queryParams?: Record<string, unknown>) {
+        for (const entity of items) {
+          if (!entity.id) continue;
+
+          store.delete(entity.id, queryParams);
+        }
+      },
+    })),
+    withHooks((store) => ({
+      onInit() {
+        toObservable(store.pagination)
+          .pipe(takeUntilDestroyed())
+          .subscribe((value) => {
+            store.getAll();
+          });
+      },
+    })),
+  );
 }
 ```
 
@@ -649,6 +660,12 @@ I think it is not perfect but works well for my needs and I hope you can find so
 
 - [NgRx Signal Store Documentation](https://NgRx.io/guide/signals/signal-store)
 - [NgRx Signal Store withEntities](https://NgRx.io/guide/signals/signal-store/entity-management)
+
+<GithubProject 
+  name="Angular Signal Store Examples" 
+  url="https://github.com/AndreasRoither/blog-projects/tree/main/angular/src/app/shared/blog/ngrx-store"
+  description="Complete examples and feature showcase"
+/>
 
 ---
 
