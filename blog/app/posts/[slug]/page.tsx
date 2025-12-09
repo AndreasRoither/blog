@@ -125,9 +125,13 @@ export default async function PostPage({ params }: PostPageProps) {
     image,
   } = post;
 
-  const imageUrlAbsolute = image?.startsWith("http")
-    ? image
-    : `${siteMetadata.siteUrl}${image?.startsWith("/") ? "" : "/"}${image}`;
+  // Use relative paths for local images, keep absolute URLs for external images
+  const getImageSrc = (img: string | undefined): string => {
+    if (!img) return "";
+    if (img.startsWith("http")) return img;
+    return img.startsWith("/") ? img : `/${img}`;
+  };
+  const imageSrc = getImageSrc(image);
 
   let seriesData: Series | null = null;
   let postIndexInSeries = -1;
@@ -143,8 +147,8 @@ export default async function PostPage({ params }: PostPageProps) {
   return (
     <SiteLayout>
       <div className="min-h-screen flex flex-col">
-        <div className="mx-auto px-4 py-8 xl:flex xl:flex-row xl:gap-8 flex-grow max-w-[1600px]">
-          <div className="hidden xl:block xl:w-12 flex-shrink-0">
+        <div className="mx-auto px-4 py-8 xl:flex xl:flex-row xl:gap-8 grow max-w-[1600px]">
+          <div className="hidden xl:block xl:w-12 shrink-0">
             <Link
               href="/"
               className="sticky top-24 text-blue-500 hover:underline dark:text-blue-400 text-sm"
@@ -153,7 +157,7 @@ export default async function PostPage({ params }: PostPageProps) {
             </Link>
           </div>
 
-          <article className="flex-grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-none w-full xl:min-w-0 xl:max-w-4xl 2xl:max-w-5xl">
+          <article className="grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-none w-full xl:min-w-0 xl:max-w-4xl 2xl:max-w-5xl">
             {" "}
             <Link
               href="/"
@@ -198,7 +202,7 @@ export default async function PostPage({ params }: PostPageProps) {
             {image && (
               <div className="mb-8">
                 <LoadingImage
-                  src={imageUrlAbsolute}
+                  src={imageSrc}
                   alt={title}
                   title={title}
                   className="w-full h-auto"
@@ -256,7 +260,7 @@ export default async function PostPage({ params }: PostPageProps) {
             </div>
           )}
 
-          <aside className="hidden xl:block xl:w-64 2xl:w-80 flex-shrink-0">
+          <aside className="hidden xl:block xl:w-64 2xl:w-80 shrink-0">
             {seriesData && postIndexInSeries !== -1 && (
               <div className="my-6 p-4 border rounded bg-muted not-prose">
                 <h3 className="text-base font-semibold mb-2">
