@@ -3,7 +3,7 @@
 # Install dependencies needed for some native Node modules and Next.js on Alpine
 # libc6-compat is for compatibility, openssl might be needed by node-fetch/Next.js
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 RUN apk add --no-cache libc6-compat openssl
 
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -24,29 +24,85 @@ RUN pnpm build:prod
 
 
 # ---- Stage 2: Production Runner ----
-FROM node:20-alpine AS runner
-RUN apk add --no-cache libc6-compat openssl
+FROM node:24-alpine AS runner
+
+# Remove unnecessary packages and upgrade existing ones
+# Only keep libc6-compat which is required for Node.js on Alpine
+RUN apk add --no-cache libc6-compat \
+    && apk upgrade --no-cache \
+    && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+
+# Remove package managers to prevent runtime package installation
+RUN rm -rf /usr/local/lib/node_modules/npm \
+    && rm -rf /usr/local/bin/npm \
+    && rm -rf /usr/local/bin/npx \
+    && rm -rf /opt/yarn* \
+    && rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 ENV PORT=3000
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-# Optional: Set HOSTNAME if needed for the server binding
+
+# Bind only to localhost by default; use reverse proxy for external access
+# Set to 0.0.0.0 for container networking
 ENV HOSTNAME=0.0.0.0
 
-WORKDIR /app
-# Create a non-root user and group for security | 1001 because 1000 is often used by the first user in Docker
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Disable node deprecation warnings to reduce information leakage
+ENV NODE_NO_WARNINGS=1
 
-# Copy build artifacts from the builder stage and set ownership
+# Limit node memory to prevent DoS via memory exhaustion
+# todo: may need adjustment based on how much app needs
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
+WORKDIR /app
+
+# Create non-root user and group with no login shell
+# Using 1001 because 1000 is often used by the first user on host systems
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 --ingroup nodejs --shell /sbin/nologin --no-create-home nextjs
+
+# Copy build artifacts from the builder stage
+# Security: Set restrictive ownership (non-root user)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# Set restrictive file permissions
+# Files: read-only for owner and group (no write, no execute for regular files)
+# Directories: read and execute for traversal
+RUN find /app -type f -exec chmod 444 {} \; \
+    && find /app -type d -exec chmod 555 {} \; \
+    && chmod 555 /app/server.js
+
+# Remove write access to home directory
+RUN chmod 555 /home 2>/dev/null || true
+
+# Switch to non-root user before exposing ports
 USER nextjs
 
 EXPOSE 3000
 
-# Run
+# Add healthcheck for container orchestration; unresponsive containers check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+
+# Use exec form to prevent shell injection and ensure proper signal handling
+# node receives SIGTERM directly for graceful shutdown
 CMD ["node", "server.js"]
+
+# =============================================================================
+# SECURITY NOTES - Container Runtime Security flags::
+# =============================================================================
+# docker run \
+#   --read-only \                          # Mount root filesystem as read-only
+#   --tmpfs /tmp:noexec,nosuid,size=64m \  # Writable /tmp with restrictions
+#   --cap-drop=ALL \                       # Drop all Linux capabilities
+#   --security-opt=no-new-privileges:true \ # Prevent privilege escalation
+#   --pids-limit=100 \                     # Limit process spawning (DoS limit)
+#   --memory=512m \                        # Limit memory usage
+#   --cpus=1 \                             # Limit CPU usage
+#   --network=bridge \                     # Use isolated network
+#   -p 127.0.0.1:3000:3000 \               # Bind only to localhost on host
+#   andreasroither/blog
+# =============================================================================
 
