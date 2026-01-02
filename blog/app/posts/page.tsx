@@ -7,7 +7,7 @@ export default async function PostsIndexPage() {
 
   return (
     <SiteLayout>
-      <div className="max-w-3xl mx-auto px-4 py-12 lg:py-16 flex-grow w-full">
+      <div className="max-w-3xl mx-auto px-4 py-12 lg:py-16 grow w-full">
         {!posts ||
           (posts.length === 0 && (
             <div className="max-w-3xl mx-auto px-4 py-8">
@@ -34,7 +34,7 @@ export default async function PostsIndexPage() {
                         {post.title}
                       </span>
                     </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 ml-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
                       {post.formattedDate}
                     </span>
                   </div>
