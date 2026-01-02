@@ -4,7 +4,7 @@ import type { PostMeta, Series } from '../model/model';
 import { getAllPostsMetaFromFS } from './posts-fs';
 import { createSlug } from './post-utils';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const _isProduction = process.env.NODE_ENV === 'production';
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Cache for loaded metadata in production
@@ -19,26 +19,26 @@ export async function loadPostsMetadata(): Promise<PostMeta[]> {
     // In development, always read from filesystem for hot reloading
     return await getAllPostsMetaFromFS();
   }
-  
+
   // In production, use cached data or load from JSON
   if (cachedPosts) {
     return cachedPosts;
   }
-  
+
   try {
     const jsonPath = path.join(process.cwd(), 'public', 'api', 'posts-metadata.json');
-    
+
     if (!fs.existsSync(jsonPath)) {
       console.warn('[METADATA] Posts metadata JSON not found, falling back to filesystem');
       return await getAllPostsMetaFromFS();
     }
-    
+
     const jsonData = fs.readFileSync(jsonPath, 'utf8');
     cachedPosts = JSON.parse(jsonData);
-    
+
     console.log(`[METADATA] Loaded ${cachedPosts?.length || 0} posts from JSON`);
     return cachedPosts || [];
-    
+
   } catch (error) {
     console.error('[METADATA] Error loading posts from JSON, falling back to filesystem:', error);
     return await getAllPostsMetaFromFS();
@@ -53,26 +53,26 @@ export async function loadSeriesMetadata(): Promise<Series[]> {
     // In development, always generate from filesystem for hot reloading
     return await getSeriesFromFS();
   }
-  
+
   // In production, use cached data or load from JSON
   if (cachedSeries) {
     return cachedSeries;
   }
-  
+
   try {
     const jsonPath = path.join(process.cwd(), 'public', 'api', 'series-metadata.json');
-    
+
     if (!fs.existsSync(jsonPath)) {
       console.warn('[METADATA] Series metadata JSON not found, falling back to filesystem');
       return await getSeriesFromFS();
     }
-    
+
     const jsonData = fs.readFileSync(jsonPath, 'utf8');
     cachedSeries = JSON.parse(jsonData);
-    
+
     console.log(`[METADATA] Loaded ${cachedSeries?.length || 0} series from JSON`);
     return cachedSeries || [];
-    
+
   } catch (error) {
     console.error('[METADATA] Error loading series from JSON, falling back to filesystem:', error);
     return await getSeriesFromFS();
