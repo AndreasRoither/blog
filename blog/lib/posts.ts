@@ -1,13 +1,10 @@
+import matter from 'gray-matter';
 import fs from 'node:fs';
 import path from 'node:path';
-import { format } from 'date-fns';
-import matter from 'gray-matter';
-import type { IReadTimeResults } from 'reading-time';
-import readingTime from 'reading-time';
-import type { Post, PostFrontmatter, PostMeta } from '../model/model';
+import type { Post, PostFrontmatter } from '../model/model';
+import { findPostMetaBySlug } from './metadata-loader';
 import { extractHeadings } from './post-utils';
-import { loadPostsMetadata, findPostMetaBySlug } from './metadata-loader';
-import { getAllPostSlugs, getPostBySlugFromFS } from './posts-fs';
+import { getPostBySlugFromFS } from './posts-fs';
 
 // root dir of posts
 const postsDirectory = path.join(process.cwd(), 'app', 'blog-posts');
@@ -24,7 +21,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     console.warn(`[BLOG] Post metadata not found for slug: ${slug}`);
     return null;
   }
-  
+
   // Always read content from filesystem (needed for MDX rendering)
   const fullPath = path.join(postsDirectory, `${slug}.mdx`);
   try {

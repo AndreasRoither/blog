@@ -62,7 +62,7 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
 
     // Clean up using stored references
     return () => {
-      for (const [slug, element] of observedElements) {
+      for (const [_slug, element] of observedElements) {
         observer.unobserve(element);
       }
       observer.disconnect();

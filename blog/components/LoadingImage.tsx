@@ -52,6 +52,7 @@ export default function LoadingImage({ src, alt, title, className = "", forceLoa
       <Image
         src={src}
         alt={alt}
+        title={title}
         width={1200}
         height={630}
         className={`w-full h-auto object-cover transition-opacity duration-500 ${

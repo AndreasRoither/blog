@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: SeriesPageProps) {
   };
 }
 
-const SeriesPostCard = ({ post, seriesSlug }: { post: PostMeta; seriesSlug: string }) => (
+const SeriesPostCard = ({ post }: { post: PostMeta; seriesSlug: string }) => (
   <div className="mb-6 rounded-lg border bg-card text-card-foreground shadow-sm p-4 transition-shadow hover:shadow-md">
     <div className="flex items-start space-x-4">
       <div className="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold">
