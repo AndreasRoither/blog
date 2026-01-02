@@ -133,6 +133,29 @@ Build the Docker image:
   docker build -t andreasroither/blog .
   ```
 
+Run the container:
+  ```bash
+  docker run -p 127.0.0.1:3000:3000 andreasroither/blog
+  ```
+
+Run with enhanced security (recommended for production):
+  ```bash
+  docker run \
+    --read-only \
+    --tmpfs /tmp:noexec,nosuid,size=64m \
+    --tmpfs /app/.next/cache:noexec,nosuid,size=128m \
+    --cap-drop=ALL \
+    --security-opt=no-new-privileges:true \
+    --pids-limit=100 \
+    --memory=512m \
+    --cpus=1 \
+    -p 127.0.0.1:3000:3000 \
+    andreasroither/blog
+  ```
+
+Note: The `--tmpfs /app/.next/cache` mount is only required when using `--read-only`. Without that flag, the cache directory is already writable in the image.
+  
+
 ### Playwright
 
 Runs the end-to-end tests.
