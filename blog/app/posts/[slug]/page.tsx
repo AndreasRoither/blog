@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import GithubProject from "@/components/GithubProject";
 import LoadingImage from "@/components/LoadingImage";
+import SeriesNavigation from "@/components/SeriesNavigation";
 import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
 import { findSeriesBySlug, loadPostSlugs } from "@/lib/metadata-loader";
@@ -78,9 +79,10 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
   const postUrl = `${siteMetadata.siteUrl}/posts/${slug}`;
   const author = siteMetadata.author;
-  const imageUrl = siteMetadata.socialBanner;
+  const imageUrl = post.image
+    ? formatImageUrl(post.image)
+    : siteMetadata.socialBanner;
 
-  // todo: update images
   return {
     title: post.title,
     description: post.description,
@@ -99,7 +101,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       authors: [author],
       images: [
         {
-          url: imageUrl, // todo: use post-specific or default image
+          url: imageUrl,
           width: 1200,
           height: 630,
           alt: post.title,
@@ -107,6 +109,12 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       ],
       section: "Technology",
       tags: post.tags,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      images: [imageUrl],
     },
   };
 }
@@ -256,76 +264,22 @@ export default async function PostPage({ params }: PostPageProps) {
 
           {/* Series navigation for medium screens (shows after article) */}
           {seriesData && postIndexInSeries !== -1 && (
-            <div className="xl:hidden my-6 p-4 border rounded bg-muted not-prose">
-              <h3 className="text-base font-semibold mb-2">
-                <p>Part {post.seriesPart} of the series: </p>
-                <Link
-                  href={`/series/${seriesData.slug}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {seriesData.title}
-                </Link>
-              </h3>
-              <div className="flex justify-between text-sm">
-                {postIndexInSeries > 0 ? (
-                  <Link
-                    href={`/posts/${seriesData.posts[postIndexInSeries - 1].slug}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    <span className="">&larr; Previous</span>
-                  </Link>
-                ) : (
-                  <span className="opacity-50">No Previous entry</span>
-                )}
-                {postIndexInSeries < seriesData.posts.length - 1 ? (
-                  <Link
-                    href={`/posts/${seriesData.posts[postIndexInSeries + 1].slug}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    <span className="">Next &rarr;</span>
-                  </Link>
-                ) : (
-                  <span className="opacity-50">Next is not out yet!</span>
-                )}
-              </div>
+            <div className="xl:hidden">
+              <SeriesNavigation
+                series={seriesData}
+                currentPost={post}
+                postIndexInSeries={postIndexInSeries}
+              />
             </div>
           )}
 
           <aside className="hidden xl:block xl:w-64 2xl:w-80 shrink-0">
             {seriesData && postIndexInSeries !== -1 && (
-              <div className="my-6 p-4 border rounded bg-muted not-prose">
-                <h3 className="text-base font-semibold mb-2">
-                  <p>Part {post.seriesPart} of the series: </p>
-                  <Link
-                    href={`/series/${seriesData.slug}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    {seriesData.title}
-                  </Link>
-                </h3>
-                <div className="flex justify-between text-sm">
-                  {postIndexInSeries > 0 ? (
-                    <Link
-                      href={`/posts/${seriesData.posts[postIndexInSeries - 1].slug}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      <span className="">&larr; Previous</span>
-                    </Link>
-                  ) : (
-                    <span className="opacity-50">No Previous entry</span>
-                  )}
-                  {postIndexInSeries < seriesData.posts.length - 1 ? (
-                    <Link
-                      href={`/posts/${seriesData.posts[postIndexInSeries + 1].slug}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      <span className="">Next &rarr;</span>
-                    </Link>
-                  ) : (
-                    <span className="opacity-50">Next is not out yet!</span>
-                  )}
-                </div>
-              </div>
+              <SeriesNavigation
+                series={seriesData}
+                currentPost={post}
+                postIndexInSeries={postIndexInSeries}
+              />
             )}
             <TableOfContents headings={headings} />
           </aside>
