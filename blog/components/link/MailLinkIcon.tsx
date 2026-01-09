@@ -4,7 +4,7 @@ import { Mail } from "lucide-react";
 export function MailLinkIcon() {
   return (
     <>
-      {siteMetadata.github && (
+      {siteMetadata.email && (
         <a href={`mailto:${siteMetadata.email}`} aria-label="Email" className="hover:text-primary">
           <Mail
             height={32}
