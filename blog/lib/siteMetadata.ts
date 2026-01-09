@@ -14,7 +14,7 @@ export const siteMetadata = {
   siteUrl: baseURL,
   siteRepo: 'https://github.com/AndreasRoither/blog',
   siteLogo: `${baseURL}/logo.png`,
-  socialBanner: `${baseURL}/1_donut.jpg`,
+  socialBanner: `${baseURL}/img/1_donut.jpg`,
   email: 'arblog@proton.me',
   github: 'https://github.com/AndreasRoither',
   locale: 'en-US',
