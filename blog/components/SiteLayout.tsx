@@ -2,12 +2,12 @@
 
 import { siteMetadata } from "@/lib/siteMetadata";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Footer from "./Footer";
 import { ThemeToggle } from "./theme/ThemeToggle";
 
 const Header = () => {
-  const [prevScrollPos, setPrevScrollPos] = useState(0);
+  const prevScrollPosRef = useRef(0);
   const [visible, setVisible] = useState(true);
 
   // header scrollbar visibility check
@@ -15,14 +15,14 @@ const Header = () => {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollPos = window.scrollY;
-      setVisible(prevScrollPos > currentScrollPos || currentScrollPos < 40);
-      setPrevScrollPos(currentScrollPos);
+      setVisible(prevScrollPosRef.current > currentScrollPos || currentScrollPos < 40);
+      prevScrollPosRef.current = currentScrollPos;
     };
 
     window.addEventListener("scroll", handleScroll);
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [prevScrollPos]);
+  }, []);
 
   return (
     <header
