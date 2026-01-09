@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   experimental: {
     mdxRs: true, // new Rust-based MDX compiler
   },
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   output: 'standalone',
   images: {
     remotePatterns: [

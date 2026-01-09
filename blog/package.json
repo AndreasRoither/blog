@@ -12,6 +12,7 @@
     "lint": "next lint",
     "lint:b": "biome lint",
     "test:e2e": "playwright test",
+    "test:ci": "playwright test --reporter=dot,github",
     "test:ui": "playwright test --ui",
     "test:codegen": "playwright codegen"
   },
