@@ -191,42 +191,44 @@ export default async function PostPage({ params }: PostPageProps) {
             <Link
               href="/"
               className="sticky top-24 text-blue-500 hover:underline dark:text-blue-400 text-sm"
+              data-testid="post-back-link-desktop"
             >
               ← cd ..
             </Link>
           </div>
 
-          <article className="grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-none w-full xl:min-w-0 xl:max-w-4xl 2xl:max-w-5xl">
+          <article className="grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-none w-full xl:min-w-0 xl:max-w-4xl 2xl:max-w-5xl" data-testid="post-article">
             {" "}
             <Link
               href="/"
               className="xl:hidden text-blue-500 hover:underline mb-4 block dark:text-blue-400"
+              data-testid="post-back-link"
             >
               ← cd ..
             </Link>
             <header className="mb-8">
-              <h1 className="text-xl lg:text-4xl xl:text-5xl font-bold">
-                {draft && <span className="text-yellow-500 mr-2">[DRAFT]</span>}
+              <h1 className="text-xl lg:text-4xl xl:text-5xl font-bold" data-testid="post-title">
+                {draft && <span className="text-yellow-500 mr-2" data-testid="post-draft-warning">[DRAFT]</span>}
                 {title}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm pt-4">
+              <p className="text-gray-500 dark:text-gray-400 text-sm pt-4" data-testid="post-date">
                 {formattedDate} | {readTime}
               </p>
 
               {formattedLastModifiedDate && formattedLastModifiedDate !== formattedDate && (
-                <p className="text-gray-500 dark:text-gray-400 text-sm pt-1">
+                <p className="text-gray-500 dark:text-gray-400 text-sm pt-1" data-testid="post-last-modified">
                   Last update: {formattedLastModifiedDate}
                 </p>
               )}
 
               {draft && (
-                <p className="text-yellow-500 dark:text-yellow-400 text-sm pt-2">
+                <p className="text-yellow-500 dark:text-yellow-400 text-sm pt-2" data-testid="post-draft-notice">
                   This post is a draft and may not be complete.
                 </p>
               )}
 
               {tags && tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 mt-4" data-testid="post-tags">
                   {tags.map((tag) => (
                     <span
                       key={tag}
@@ -239,7 +241,7 @@ export default async function PostPage({ params }: PostPageProps) {
               )}
             </header>
             {image && (
-              <div className="mb-8">
+              <div className="mb-8" data-testid="post-image">
                 <LoadingImage
                   src={imageSrc}
                   alt={title}
@@ -248,7 +250,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 />
               </div>
             )}
-            <div className="prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
+            <div className="prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none" data-testid="post-content">
               <MDXRemote
                 source={content}
                 components={components}

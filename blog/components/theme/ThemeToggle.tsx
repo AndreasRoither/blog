@@ -55,6 +55,7 @@ function ThemeToggleInner({ className = "" }: { className?: string }) {
 
   return (
     <div
+      data-testid="theme-toggle"
       className={`flex items-center space-x-1 border border-gray-600 rounded-lg p-0.5 w-fit ${className}`}
     >
       <Button
@@ -63,6 +64,7 @@ function ThemeToggleInner({ className = "" }: { className?: string }) {
         type="button"
         aria-label="Switch to Light Mode"
         onClick={() => setTheme("light")}
+        data-testid="theme-light-btn"
         className="p-1 transition-colors duration-150 hover:cursor-pointer"
       >
         <Sun size={8} />
@@ -73,6 +75,7 @@ function ThemeToggleInner({ className = "" }: { className?: string }) {
         type="button"
         aria-label="Switch to Dark Mode"
         onClick={() => setTheme("dark")}
+        data-testid="theme-dark-btn"
         className="p-1 transition-colors duration-150 hover:cursor-pointer"
       >
         <Moon size={8} />
@@ -83,6 +86,7 @@ function ThemeToggleInner({ className = "" }: { className?: string }) {
         type="button"
         aria-label="Switch to System Mode"
         onClick={() => setTheme("system")}
+        data-testid="theme-system-btn"
         className="p-1 transition-colors duration-150 hover:cursor-pointer"
       >
         <Monitor size={8} />

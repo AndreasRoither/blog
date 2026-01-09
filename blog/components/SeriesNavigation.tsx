@@ -18,12 +18,13 @@ export default function SeriesNavigation({
   const nextPost = hasNext ? series.posts[postIndexInSeries + 1] : null;
 
   return (
-    <div className="my-6 p-4 border rounded bg-muted not-prose">
+    <div className="my-6 p-4 border rounded bg-muted not-prose" data-testid="series-navigation">
       <h3 className="text-base font-semibold mb-2">
         <p>Part {currentPost.seriesPart} of the series: </p>
         <Link
           href={`/series/${series.slug}`}
           className="text-blue-600 hover:underline"
+          data-testid="series-nav-link"
         >
           {series.title}
         </Link>
@@ -33,21 +34,23 @@ export default function SeriesNavigation({
           <Link
             href={`/posts/${previousPost.slug}`}
             className="text-blue-600 hover:underline"
+            data-testid="series-nav-prev"
           >
             <span>&larr; Previous</span>
           </Link>
         ) : (
-          <span className="opacity-50">No Previous entry</span>
+          <span className="opacity-50" data-testid="series-nav-prev-disabled">No Previous entry</span>
         )}
         {nextPost ? (
           <Link
             href={`/posts/${nextPost.slug}`}
             className="text-blue-600 hover:underline"
+            data-testid="series-nav-next"
           >
             <span>Next &rarr;</span>
           </Link>
         ) : (
-          <span className="opacity-50">Next is not out yet!</span>
+          <span className="opacity-50" data-testid="series-nav-next-disabled">Next is not out yet!</span>
         )}
       </div>
     </div>

@@ -98,8 +98,8 @@ function TableOfContentsInner({ headings }: TableOfContentsProps) {
   };
 
   return (
-    <nav aria-label="Table of contents" className="sticky top-24 p-4 rounded-lg max-h-[calc(100vh-12rem)] overflow-y-auto">
-      <ul className="space-y-2">
+    <nav aria-label="Table of contents" className="sticky top-24 p-4 rounded-lg max-h-[calc(100vh-12rem)] overflow-y-auto" data-testid="table-of-contents">
+      <ul className="space-y-2" data-testid="toc-list">
         {headings.map((heading) => (
           <li
             key={heading.slug}
@@ -107,6 +107,7 @@ function TableOfContentsInner({ headings }: TableOfContentsProps) {
           >
             <a
               href={`#${heading.slug}`}
+              data-testid={`toc-link-${heading.slug}`}
               className={`block text-sm transition-colors duration-150 ${
                 activeSlug === heading.slug
                   ? "text-blue-600 dark:text-primary font-semibold"

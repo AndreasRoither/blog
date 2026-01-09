@@ -29,14 +29,14 @@ export default async function PostsIndexPage() {
           ))}
 
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4 pb-2">Posts</h2>
+          <h2 className="text-2xl font-semibold mb-4 pb-2" data-testid="posts-page-title">Posts</h2>
 
           {/* <div className="relative mb-4">
             <Input type="text" placeholder="Search" className="pl-10" />
             <Search className="h-5 w-5 absolute left-3 top-2 text-gray-400" />
           </div> */}
 
-          <ul>
+          <ul data-testid="posts-list">
             {posts.map((post) => (
               <PostListItem key={post.slug} post={post} />
             ))}

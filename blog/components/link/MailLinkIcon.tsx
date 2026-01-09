@@ -5,7 +5,7 @@ export function MailLinkIcon() {
   return (
     <>
       {siteMetadata.email && (
-        <a href={`mailto:${siteMetadata.email}`} aria-label="Email" className="hover:text-primary">
+        <a href={`mailto:${siteMetadata.email}`} aria-label="Email" data-testid="footer-mail-link" className="hover:text-primary">
           <Mail
             height={32}
             width={32}

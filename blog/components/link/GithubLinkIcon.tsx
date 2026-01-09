@@ -10,6 +10,7 @@ export function GithubLinkIcon() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="GitHub Profile"
+          data-testid="footer-github-link"
           className="hover:text-gray-400"
         >
           <Image

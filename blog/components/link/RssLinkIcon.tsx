@@ -10,6 +10,7 @@ export function RssLinkIcon() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="RSS Feed"
+          data-testid="footer-rss-link"
           className="hover:text-primary"
         >
           <Rss className="w-6 h-6 transition-transform duration-150 sm:h-7 sm:w-7 hover:scale-110" />
