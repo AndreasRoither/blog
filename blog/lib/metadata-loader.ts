@@ -36,7 +36,9 @@ export async function loadPostsMetadata(): Promise<PostMeta[]> {
     const jsonData = fs.readFileSync(jsonPath, 'utf8');
     cachedPosts = JSON.parse(jsonData);
 
-    console.log(`[METADATA] Loaded ${cachedPosts?.length || 0} posts from JSON`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[METADATA] Loaded ${cachedPosts?.length || 0} posts from JSON`);
+    }
     return cachedPosts || [];
 
   } catch (error) {
@@ -70,7 +72,9 @@ export async function loadSeriesMetadata(): Promise<Series[]> {
     const jsonData = fs.readFileSync(jsonPath, 'utf8');
     cachedSeries = JSON.parse(jsonData);
 
-    console.log(`[METADATA] Loaded ${cachedSeries?.length || 0} series from JSON`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[METADATA] Loaded ${cachedSeries?.length || 0} series from JSON`);
+    }
     return cachedSeries || [];
 
   } catch (error) {

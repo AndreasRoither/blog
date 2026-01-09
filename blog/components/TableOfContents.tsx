@@ -83,9 +83,6 @@ function TableOfContentsInner({ headings }: TableOfContentsProps) {
     return null;
   }
 
-  // Debug: log heading depths (remove after testing)
-  console.log("[TOC] Headings:", headings.map(h => ({ text: h.text.slice(0, 20), depth: h.depth })));
-
   const getIndentationStyle = (depth: number): React.CSSProperties => {
     // Using inline styles because Tailwind purges dynamic classes
     // h2 = main sections (no indent), h3+ = progressively indented
