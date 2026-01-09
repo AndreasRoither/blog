@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 
 import GithubProject from "@/components/GithubProject";
 import LoadingImage from "@/components/LoadingImage";
+import SeriesNavigation from "@/components/SeriesNavigation";
 import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
-import { findSeriesBySlug } from "@/lib/metadata-loader";
+import { findSeriesBySlug, loadPostSlugs } from "@/lib/metadata-loader";
 import { createSlug } from "@/lib/post-utils";
 import { getPostBySlug } from "@/lib/posts";
 import { siteMetadata } from "@/lib/siteMetadata";
+import { formatImageUrl } from "@/lib/utils";
 import type { Post, Series } from "@/model/model";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -16,6 +18,11 @@ import type { Options as RehypePrettyCodeOptions } from "rehype-pretty-code";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
+
+export async function generateStaticParams() {
+  const slugs = await loadPostSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
 
 interface PostPageParams {
   slug: string;
@@ -72,9 +79,10 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
   const postUrl = `${siteMetadata.siteUrl}/posts/${slug}`;
   const author = siteMetadata.author;
-  const imageUrl = siteMetadata.socialBanner;
+  const imageUrl = post.image
+    ? formatImageUrl(post.image)
+    : siteMetadata.socialBanner;
 
-  // todo: update images
   return {
     title: post.title,
     description: post.description,
@@ -93,7 +101,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       authors: [author],
       images: [
         {
-          url: imageUrl, // todo: use post-specific or default image
+          url: imageUrl,
           width: 1200,
           height: 630,
           alt: post.title,
@@ -101,6 +109,12 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       ],
       section: "Technology",
       tags: post.tags,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      images: [imageUrl],
     },
   };
 }
@@ -144,50 +158,77 @@ export default async function PostPage({ params }: PostPageProps) {
     }
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: title,
+    description: post.description,
+    datePublished: new Date(post.date).toISOString(),
+    dateModified: new Date(post.lastModified ?? post.date).toISOString(),
+    author: {
+      "@type": "Person",
+      name: siteMetadata.author,
+      url: siteMetadata.siteUrl,
+    },
+    publisher: {
+      "@type": "Person",
+      name: siteMetadata.author,
+    },
+    url: `${siteMetadata.siteUrl}/posts/${slug}`,
+    ...(image && { image: formatImageUrl(image) }),
+    ...(tags && tags.length > 0 && { keywords: tags.join(", ") }),
+  };
+
   return (
     <SiteLayout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="min-h-screen flex flex-col">
         <div className="mx-auto px-4 py-8 xl:flex xl:flex-row xl:gap-8 grow max-w-[1600px]">
           <div className="hidden xl:block xl:w-12 shrink-0">
             <Link
               href="/"
               className="sticky top-24 text-blue-500 hover:underline dark:text-blue-400 text-sm"
+              data-testid="post-back-link-desktop"
             >
               ← cd ..
             </Link>
           </div>
 
-          <article className="grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-none w-full xl:min-w-0 xl:max-w-4xl 2xl:max-w-5xl">
+          <article className="grow max-md:max-w-[90vw] max-lg:max-w-[80vw] max-w-none w-full xl:min-w-0 xl:max-w-4xl 2xl:max-w-5xl" data-testid="post-article">
             {" "}
             <Link
               href="/"
               className="xl:hidden text-blue-500 hover:underline mb-4 block dark:text-blue-400"
+              data-testid="post-back-link"
             >
               ← cd ..
             </Link>
             <header className="mb-8">
-              <h1 className="text-xl lg:text-4xl xl:text-5xl font-bold">
-                {draft && <span className="text-yellow-500 mr-2">[DRAFT]</span>}
+              <h1 className="text-xl lg:text-4xl xl:text-5xl font-bold" data-testid="post-title">
+                {draft && <span className="text-yellow-500 mr-2" data-testid="post-draft-warning">[DRAFT]</span>}
                 {title}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm pt-4">
+              <p className="text-gray-500 dark:text-gray-400 text-sm pt-4" data-testid="post-date">
                 {formattedDate} | {readTime}
               </p>
 
               {formattedLastModifiedDate && formattedLastModifiedDate !== formattedDate && (
-                <p className="text-gray-500 dark:text-gray-400 text-sm pt-1">
+                <p className="text-gray-500 dark:text-gray-400 text-sm pt-1" data-testid="post-last-modified">
                   Last update: {formattedLastModifiedDate}
                 </p>
               )}
 
               {draft && (
-                <p className="text-yellow-500 dark:text-yellow-400 text-sm pt-2">
+                <p className="text-yellow-500 dark:text-yellow-400 text-sm pt-2" data-testid="post-draft-notice">
                   This post is a draft and may not be complete.
                 </p>
               )}
 
               {tags && tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 mt-4" data-testid="post-tags">
                   {tags.map((tag) => (
                     <span
                       key={tag}
@@ -200,7 +241,7 @@ export default async function PostPage({ params }: PostPageProps) {
               )}
             </header>
             {image && (
-              <div className="mb-8">
+              <div className="mb-8" data-testid="post-image">
                 <LoadingImage
                   src={imageSrc}
                   alt={title}
@@ -209,7 +250,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 />
               </div>
             )}
-            <div className="prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
+            <div className="prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none" data-testid="post-content">
               <MDXRemote
                 source={content}
                 components={components}
@@ -225,76 +266,22 @@ export default async function PostPage({ params }: PostPageProps) {
 
           {/* Series navigation for medium screens (shows after article) */}
           {seriesData && postIndexInSeries !== -1 && (
-            <div className="xl:hidden my-6 p-4 border rounded bg-muted not-prose">
-              <h3 className="text-base font-semibold mb-2">
-                <p>Part {post.seriesPart} of the series: </p>
-                <Link
-                  href={`/series/${seriesData.slug}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {seriesData.title}
-                </Link>
-              </h3>
-              <div className="flex justify-between text-sm">
-                {postIndexInSeries > 0 ? (
-                  <Link
-                    href={`/posts/${seriesData.posts[postIndexInSeries - 1].slug}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    <span className="">&larr; Previous</span>
-                  </Link>
-                ) : (
-                  <span className="opacity-50">No Previous entry</span>
-                )}
-                {postIndexInSeries < seriesData.posts.length - 1 ? (
-                  <Link
-                    href={`/posts/${seriesData.posts[postIndexInSeries + 1].slug}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    <span className="">Next &rarr;</span>
-                  </Link>
-                ) : (
-                  <span className="opacity-50">Next is not out yet!</span>
-                )}
-              </div>
+            <div className="xl:hidden">
+              <SeriesNavigation
+                series={seriesData}
+                currentPost={post}
+                postIndexInSeries={postIndexInSeries}
+              />
             </div>
           )}
 
           <aside className="hidden xl:block xl:w-64 2xl:w-80 shrink-0">
             {seriesData && postIndexInSeries !== -1 && (
-              <div className="my-6 p-4 border rounded bg-muted not-prose">
-                <h3 className="text-base font-semibold mb-2">
-                  <p>Part {post.seriesPart} of the series: </p>
-                  <Link
-                    href={`/series/${seriesData.slug}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    {seriesData.title}
-                  </Link>
-                </h3>
-                <div className="flex justify-between text-sm">
-                  {postIndexInSeries > 0 ? (
-                    <Link
-                      href={`/posts/${seriesData.posts[postIndexInSeries - 1].slug}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      <span className="">&larr; Previous</span>
-                    </Link>
-                  ) : (
-                    <span className="opacity-50">No Previous entry</span>
-                  )}
-                  {postIndexInSeries < seriesData.posts.length - 1 ? (
-                    <Link
-                      href={`/posts/${seriesData.posts[postIndexInSeries + 1].slug}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      <span className="">Next &rarr;</span>
-                    </Link>
-                  ) : (
-                    <span className="opacity-50">Next is not out yet!</span>
-                  )}
-                </div>
-              </div>
+              <SeriesNavigation
+                series={seriesData}
+                currentPost={post}
+                postIndexInSeries={postIndexInSeries}
+              />
             )}
             <TableOfContents headings={headings} />
           </aside>

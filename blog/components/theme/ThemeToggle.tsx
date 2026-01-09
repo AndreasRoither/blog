@@ -4,8 +4,9 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import * as React from "react";
 import { Button } from "../ui/button";
+import { ErrorBoundary } from "../ErrorBoundary";
 
-export function ThemeToggle({ className = "" }: { className?: string }) {
+function ThemeToggleInner({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
 
   // Need to track mounted state to avoid hydration mismatch
@@ -54,6 +55,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 
   return (
     <div
+      data-testid="theme-toggle"
       className={`flex items-center space-x-1 border border-gray-600 rounded-lg p-0.5 w-fit ${className}`}
     >
       <Button
@@ -62,6 +64,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         type="button"
         aria-label="Switch to Light Mode"
         onClick={() => setTheme("light")}
+        data-testid="theme-light-btn"
         className="p-1 transition-colors duration-150 hover:cursor-pointer"
       >
         <Sun size={8} />
@@ -72,6 +75,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         type="button"
         aria-label="Switch to Dark Mode"
         onClick={() => setTheme("dark")}
+        data-testid="theme-dark-btn"
         className="p-1 transition-colors duration-150 hover:cursor-pointer"
       >
         <Moon size={8} />
@@ -82,10 +86,19 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         type="button"
         aria-label="Switch to System Mode"
         onClick={() => setTheme("system")}
+        data-testid="theme-system-btn"
         className="p-1 transition-colors duration-150 hover:cursor-pointer"
       >
         <Monitor size={8} />
       </Button>
     </div>
+  );
+}
+
+export function ThemeToggle({ className = "" }: { className?: string }) {
+  return (
+    <ErrorBoundary fallback={null}>
+      <ThemeToggleInner className={className} />
+    </ErrorBoundary>
   );
 }

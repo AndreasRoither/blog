@@ -1,4 +1,4 @@
-import { loadPostsMetadata } from '@/lib/metadata-loader';
+import { loadPostsMetadata, loadSeriesMetadata } from '@/lib/metadata-loader';
 import { siteMetadata } from '@/lib/siteMetadata';
 
 type SitemapRoute = {
@@ -12,14 +12,15 @@ type SitemapRoute = {
  * Generates a sitemap.xml file containing all published blog posts and static routes.
  */
 export async function GET() {
-  console.log('[Sitemap] Generating sitemap...');
-
   try {
     const posts = await loadPostsMetadata();
+    const series = await loadSeriesMetadata();
     const siteUrl = siteMetadata.siteUrl;
 
     const staticRoutes: SitemapRoute[] = [
       { url: `${siteUrl}/`, changeFrequency: 'weekly', priority: 1.0 },
+      { url: `${siteUrl}/posts`, changeFrequency: 'daily', priority: 0.9 },
+      { url: `${siteUrl}/series`, changeFrequency: 'weekly', priority: 0.9 },
       // todo: add other static pages like /about, /contact
     ];
 
@@ -30,11 +31,18 @@ export async function GET() {
         lastModified: post.lastModified
           ? new Date(post.lastModified).toISOString().split('T')[0]
           : new Date(post.date).toISOString().split('T')[0],
-        changeFrequency: 'weekly',
+        changeFrequency: 'weekly' as const,
         priority: 0.8,
       }));
 
-    const allRoutes = [...staticRoutes, ...postRoutes];
+    const seriesRoutes = series.map((s) => ({
+      url: `${siteUrl}/series/${s.slug}`,
+      lastModified: new Date(s.lastModified).toISOString().split('T')[0],
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }));
+
+    const allRoutes = [...staticRoutes, ...postRoutes, ...seriesRoutes];
 
     const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

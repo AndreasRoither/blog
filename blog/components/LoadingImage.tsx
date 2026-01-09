@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 interface LoadingImageProps {
   src: string;
@@ -9,9 +10,10 @@ interface LoadingImageProps {
   title: string;
   className?: string;
   forceLoading?: boolean;
+  priority?: boolean;
 }
 
-export default function LoadingImage({ src, alt, title, className = "", forceLoading = false }: LoadingImageProps) {
+function LoadingImageInner({ src, alt, title, className = "", forceLoading = false, priority = false }: LoadingImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -63,9 +65,27 @@ export default function LoadingImage({ src, alt, title, className = "", forceLoa
           setIsLoading(false);
           setHasError(true);
         }}
-        priority
+        priority={priority}
         sizes="(max-width: 768px) 90vw, (max-width: 1024px) 80vw, 768px"
       />
     </div>
+  );
+}
+
+export default function LoadingImage(props: LoadingImageProps) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className={`relative overflow-hidden rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800 ${props.className}`}>
+          <div className="flex items-center justify-center h-48">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Failed to load image
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <LoadingImageInner {...props} />
+    </ErrorBoundary>
   );
 }

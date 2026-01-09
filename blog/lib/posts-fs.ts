@@ -154,7 +154,19 @@ export async function getAllPostsMetaFromFS(): Promise<PostMeta[]> {
     }
   });
 
-  const posts = (await Promise.all(postsPromises))
+  const results = await Promise.allSettled(postsPromises);
+
+  // Log rejected promises
+  const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+  if (rejected.length > 0) {
+    console.error(`[BLOG] ${rejected.length} post(s) failed to load:`,
+      rejected.map(r => r.reason)
+    );
+  }
+
+  const posts = results
+    .filter((result): result is PromiseFulfilledResult<PostMeta | null> => result.status === 'fulfilled')
+    .map(result => result.value)
     .filter((post): post is PostMeta => post !== null);
 
   // sort by date descending (newest first)

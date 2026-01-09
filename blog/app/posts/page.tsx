@@ -1,6 +1,19 @@
+import PostListItem from "@/components/PostListItem";
 import SiteLayout from "@/components/SiteLayout";
 import { loadPostsMetadata } from "@/lib/metadata-loader";
-import Link from "next/link";
+import { siteMetadata } from "@/lib/siteMetadata";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: `All Posts | ${siteMetadata.title}`,
+  description: `Browse all blog posts on ${siteMetadata.title}. Covering software development, technology, and the occasional matcha.`,
+  openGraph: {
+    title: `All Posts | ${siteMetadata.title}`,
+    description: `Browse all blog posts on ${siteMetadata.title}.`,
+    url: `${siteMetadata.siteUrl}/posts`,
+    type: 'website',
+  },
+};
 
 export default async function PostsIndexPage() {
   const posts = await loadPostsMetadata();
@@ -16,31 +29,16 @@ export default async function PostsIndexPage() {
           ))}
 
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4 pb-2">Posts</h2>
+          <h2 className="text-2xl font-semibold mb-4 pb-2" data-testid="posts-page-title">Posts</h2>
 
           {/* <div className="relative mb-4">
             <Input type="text" placeholder="Search" className="pl-10" />
             <Search className="h-5 w-5 absolute left-3 top-2 text-gray-400" />
           </div> */}
 
-          <ul>
+          <ul data-testid="posts-list">
             {posts.map((post) => (
-              <li key={post.slug} className="mb-5 ">
-                <Link href={`/posts/${post.slug}`} className="group block">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      {post.draft && <span className="text-yellow-500 mr-2">[DRAFT]</span>}
-                      <span className="text-lg text-gray-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
-                        {post.title}
-                      </span>
-                    </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0 ml-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
-                      {post.formattedDate}
-                    </span>
-                  </div>
-                  <hr className="border-t border-dashed border-gray-200 dark:border-gray-700 mt-3 group-hover:border-gray-300 dark:group-hover:border-gray-600" />
-                </Link>
-              </li>
+              <PostListItem key={post.slug} post={post} />
             ))}
           </ul>
         </section>

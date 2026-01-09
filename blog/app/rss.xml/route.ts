@@ -7,7 +7,6 @@ import RSS from 'rss';
  * Creates an XML RSS feed containing all published blog posts with their metadata and preview image if available.
  */
 export async function GET() {
-  console.log('[RSS] Generating RSS feed...');
   try {
     const posts = await loadPostsMetadata();
 

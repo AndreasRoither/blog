@@ -29,6 +29,12 @@ export const metadata: Metadata = {
     locale: siteMetadata.locale,
     type: "website",
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteMetadata.title,
+    description: siteMetadata.description,
+    images: [siteMetadata.socialBanner],
+  },
   robots: {
     index: true,
     follow: true,
@@ -40,13 +46,12 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  // icons: {
-  //   icon: '/favicon.ico',
-  //   shortcut: '/favicon-16x16.png',
-  //   apple: '/apple-touch-icon.png',
-  // },
-  // Manifest file
-  // manifest: '/site.webmanifest',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/site.webmanifest',
 };
 
 export default function RootLayout({

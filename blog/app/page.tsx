@@ -1,3 +1,4 @@
+import PostListItem from "@/components/PostListItem";
 import SeriesCard from "@/components/SeriesCard";
 import SiteLayout from "@/components/SiteLayout";
 import { getAllSeries } from "@/lib/series";
@@ -31,10 +32,10 @@ export default async function Home() {
     <SiteLayout>
       <div className="max-w-3xl mx-auto px-4 py-12 lg:py-16 flex-grow w-full">
         <header className="mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2" data-testid="home-title">
             {siteMetadata.headerTitle ?? siteMetadata.title}
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">{siteMetadata.description}</p>
+          <p className="text-lg text-gray-600 dark:text-gray-400" data-testid="home-description">{siteMetadata.description}</p>
         </header>
 
         {!posts ||
@@ -44,31 +45,16 @@ export default async function Home() {
             </div>
           ))}
 
-        <section className="mb-12">
+        <section className="mb-12" data-testid="home-latest-posts">
           <h2 className="text-2xl font-semibold mb-4 pb-2">Latest Posts</h2>
-          <ul>
+          <ul data-testid="home-posts-list">
             {latestPosts.map((post) => (
-              <li key={post.slug} className="mb-5 ">
-                <Link href={`/posts/${post.slug}`} className="group block">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      {post.draft && <span className="text-yellow-500 mr-2">[DRAFT]</span>}
-                      <span className="text-lg text-gray-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
-                        {post.title}
-                      </span>
-                    </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 ml-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
-                      {post.formattedDate}
-                    </span>
-                  </div>
-                  <hr className="border-t border-dashed border-gray-200 dark:border-gray-700 mt-3 group-hover:border-gray-300 dark:group-hover:border-gray-600" />
-                </Link>
-              </li>
+              <PostListItem key={post.slug} post={post} />
             ))}
           </ul>
           {posts.length > 5 && (
             <div className="mt-4 text-right">
-              <Link href="/posts" className="text-sm text-blue-600 hover:underline">
+              <Link href="/posts" className="text-sm text-blue-600 hover:underline" data-testid="home-more-posts-link">
                 more &rarr;
               </Link>
             </div>
@@ -76,7 +62,7 @@ export default async function Home() {
         </section>
 
         {latestSeries?.length > 0 && (
-          <section>
+          <section data-testid="home-latest-series">
             <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Latest Tutorial Series</h2>
             <div className="overflow-y-auto max-h-[600px] pr-2">
               {latestSeries.length > 0 ? (
@@ -87,7 +73,7 @@ export default async function Home() {
             </div>
             {latestSeries.length > 0 && (
               <div className="mt-4 text-right">
-                <Link href="/series" className="text-sm text-blue-600 hover:underline">
+                <Link href="/series" className="text-sm text-blue-600 hover:underline" data-testid="home-all-series-link">
                   View all series &rarr;
                 </Link>
               </div>
@@ -96,11 +82,12 @@ export default async function Home() {
         )}
 
         {posts?.length > 0 && (
-          <section className="mt-12">
+          <section className="mt-12" data-testid="home-tags">
             <div className="flex flex-wrap gap-2">
               <span
                 className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium cursor-default"
                 title={`${posts.length} posts total`}
+                data-testid="home-total-posts"
               >
                 Total posts: {posts.length}
               </span>

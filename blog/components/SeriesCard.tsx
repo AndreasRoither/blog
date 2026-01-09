@@ -10,18 +10,18 @@ export default function SeriesCard(params: SeriesCardProps) {
   const { series } = params;
 
   return (
-    <div className="mb-6 rounded-lg border bg-card text-card-foreground shadow-sm p-4">
-      <Link href={`/series/${series.slug}`} className="hover:underline">
+    <div className="mb-6 rounded-lg border bg-card text-card-foreground shadow-sm p-4" data-testid="series-card">
+      <Link href={`/series/${series.slug}`} className="hover:underline" data-testid="series-card-title-link">
         <h3 className="text-lg font-semibold tracking-tight mb-1">{series.title}</h3>
       </Link>
-      <p className="text-sm text-muted-foreground mb-2">
+      <p className="text-sm text-muted-foreground mb-2" data-testid="series-card-meta">
         {series.posts.length} Part{series.posts.length === 1 ? "" : "s"} &middot; Last updated:{" "}
         {format(new Date(series.lastModified), "PPP")}
       </p>
-      <div className="text-xs">
+      <div className="text-xs" data-testid="series-card-posts">
         {series.posts.slice(0, 3).map((p) => (
           <div key={p.slug}>
-            <Link href={`/posts/${p.slug}`} className="text-blue-600 hover:underline">
+            <Link href={`/posts/${p.slug}`} className="text-blue-600 hover:underline" data-testid="series-card-post-link">
               Part {p.seriesPart}: {p.title}
             </Link>
           </div>

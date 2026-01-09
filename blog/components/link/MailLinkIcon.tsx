@@ -4,8 +4,8 @@ import { Mail } from "lucide-react";
 export function MailLinkIcon() {
   return (
     <>
-      {siteMetadata.github && (
-        <a href={`mailto:${siteMetadata.email}`} aria-label="Email" className="hover:text-primary">
+      {siteMetadata.email && (
+        <a href={`mailto:${siteMetadata.email}`} aria-label="Email" data-testid="footer-mail-link" className="hover:text-primary">
           <Mail
             height={32}
             width={32}

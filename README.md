@@ -81,7 +81,7 @@ Another core part will be tutorial series about setting up an creating web appli
   description: 'A short, compelling summary of your post for previews and SEO.'
   draft: false # Set to true to hide from production builds (visible in dev)
   tags: ['tag1', 'coding', 'another-tag'] # Optional
-  image: '/donut.jpg'
+  image: '/1_donut.jpg'
   ---
 
   Your main post content starts here...
