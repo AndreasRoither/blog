@@ -29,6 +29,12 @@ export const metadata: Metadata = {
     locale: siteMetadata.locale,
     type: "website",
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteMetadata.title,
+    description: siteMetadata.description,
+    images: [siteMetadata.socialBanner],
+  },
   robots: {
     index: true,
     follow: true,

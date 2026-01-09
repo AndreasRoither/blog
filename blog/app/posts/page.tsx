@@ -1,6 +1,19 @@
 import PostListItem from "@/components/PostListItem";
 import SiteLayout from "@/components/SiteLayout";
 import { loadPostsMetadata } from "@/lib/metadata-loader";
+import { siteMetadata } from "@/lib/siteMetadata";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: `All Posts | ${siteMetadata.title}`,
+  description: `Browse all blog posts on ${siteMetadata.title}. Covering software development, technology, and the occasional matcha.`,
+  openGraph: {
+    title: `All Posts | ${siteMetadata.title}`,
+    description: `Browse all blog posts on ${siteMetadata.title}.`,
+    url: `${siteMetadata.siteUrl}/posts`,
+    type: 'website',
+  },
+};
 
 export default async function PostsIndexPage() {
   const posts = await loadPostsMetadata();

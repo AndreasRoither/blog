@@ -9,12 +9,12 @@ import Link from "next/link";
 export const metadata = {
   title: `Tutorial Series | ${siteMetadata.title}`,
   description: `Browse all tutorial series available on ${siteMetadata.title}.`,
-  // openGraph: {
-  //   title: `Tutorial Series | ${siteMetadata.title}`,
-  //   description: `Browse all tutorial series available on ${siteMetadata.title}.`,
-  //   url: `${siteMetadata.siteUrl}/series`,
-  //   // images: [...] // Optional: Add a generic image for this page
-  // },
+  openGraph: {
+    title: `Tutorial Series | ${siteMetadata.title}`,
+    description: `Browse all tutorial series available on ${siteMetadata.title}.`,
+    url: `${siteMetadata.siteUrl}/series`,
+    type: 'website',
+  },
 };
 
 const SeriesOverviewCard = ({ series }: { series: Series }) => (

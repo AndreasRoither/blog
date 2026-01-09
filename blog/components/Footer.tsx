@@ -4,6 +4,8 @@ import { MailLinkIcon } from "./link/MailLinkIcon";
 import { RssLinkIcon } from "./link/RssLinkIcon";
 import { ThemeToggle } from "./theme/ThemeToggle";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export default function Footer() {
   return (
     <footer className="items-center w-full px-4 py-4 border-t border-gray-200 bg-background dark:border-gray-700">
@@ -16,7 +18,7 @@ export default function Footer() {
           <MailLinkIcon />
 
           <span className="max-sm:text-xs">
-            © {new Date().getFullYear()} {siteMetadata.author}
+            © {CURRENT_YEAR} {siteMetadata.author}
           </span>
         </div>
 
