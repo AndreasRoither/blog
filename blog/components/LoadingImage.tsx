@@ -10,9 +10,10 @@ interface LoadingImageProps {
   title: string;
   className?: string;
   forceLoading?: boolean;
+  priority?: boolean;
 }
 
-function LoadingImageInner({ src, alt, title, className = "", forceLoading = false }: LoadingImageProps) {
+function LoadingImageInner({ src, alt, title, className = "", forceLoading = false, priority = false }: LoadingImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -64,7 +65,7 @@ function LoadingImageInner({ src, alt, title, className = "", forceLoading = fal
           setIsLoading(false);
           setHasError(true);
         }}
-        priority
+        priority={priority}
         sizes="(max-width: 768px) 90vw, (max-width: 1024px) 80vw, 768px"
       />
     </div>
