@@ -4,8 +4,9 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import * as React from "react";
 import { Button } from "../ui/button";
+import { ErrorBoundary } from "../ErrorBoundary";
 
-export function ThemeToggle({ className = "" }: { className?: string }) {
+function ThemeToggleInner({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
 
   // Need to track mounted state to avoid hydration mismatch
@@ -87,5 +88,13 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         <Monitor size={8} />
       </Button>
     </div>
+  );
+}
+
+export function ThemeToggle({ className = "" }: { className?: string }) {
+  return (
+    <ErrorBoundary fallback={null}>
+      <ThemeToggleInner className={className} />
+    </ErrorBoundary>
   );
 }

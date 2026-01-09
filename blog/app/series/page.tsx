@@ -23,11 +23,7 @@ const SeriesOverviewCard = ({ series }: { series: Series }) => (
       <div className="relative h-40 w-full">
         {series.image && (
           <Image
-            src={
-              series.image.startsWith("http")
-                ? series.image
-                : `${siteMetadata.siteUrl}${series.image.startsWith("/") ? "" : "/"}${series.image}`
-            }
+            src={series.image.startsWith("/") ? series.image : `/${series.image}`}
             alt={`Cover image for ${series.title} series`}
             fill
             style={{ objectFit: "cover" }}

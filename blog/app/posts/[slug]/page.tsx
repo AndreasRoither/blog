@@ -5,10 +5,11 @@ import GithubProject from "@/components/GithubProject";
 import LoadingImage from "@/components/LoadingImage";
 import SiteLayout from "@/components/SiteLayout";
 import TableOfContents from "@/components/TableOfContents";
-import { findSeriesBySlug } from "@/lib/metadata-loader";
+import { findSeriesBySlug, loadPostSlugs } from "@/lib/metadata-loader";
 import { createSlug } from "@/lib/post-utils";
 import { getPostBySlug } from "@/lib/posts";
 import { siteMetadata } from "@/lib/siteMetadata";
+import { formatImageUrl } from "@/lib/utils";
 import type { Post, Series } from "@/model/model";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -16,6 +17,11 @@ import type { Options as RehypePrettyCodeOptions } from "rehype-pretty-code";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
+
+export async function generateStaticParams() {
+  const slugs = await loadPostSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
 
 interface PostPageParams {
   slug: string;
@@ -144,8 +150,33 @@ export default async function PostPage({ params }: PostPageProps) {
     }
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: title,
+    description: post.description,
+    datePublished: new Date(post.date).toISOString(),
+    dateModified: new Date(post.lastModified ?? post.date).toISOString(),
+    author: {
+      "@type": "Person",
+      name: siteMetadata.author,
+      url: siteMetadata.siteUrl,
+    },
+    publisher: {
+      "@type": "Person",
+      name: siteMetadata.author,
+    },
+    url: `${siteMetadata.siteUrl}/posts/${slug}`,
+    ...(image && { image: formatImageUrl(image) }),
+    ...(tags && tags.length > 0 && { keywords: tags.join(", ") }),
+  };
+
   return (
     <SiteLayout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="min-h-screen flex flex-col">
         <div className="mx-auto px-4 py-8 xl:flex xl:flex-row xl:gap-8 grow max-w-[1600px]">
           <div className="hidden xl:block xl:w-12 shrink-0">

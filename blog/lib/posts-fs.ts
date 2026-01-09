@@ -154,7 +154,10 @@ export async function getAllPostsMetaFromFS(): Promise<PostMeta[]> {
     }
   });
 
-  const posts = (await Promise.all(postsPromises))
+  const results = await Promise.allSettled(postsPromises);
+  const posts = results
+    .filter((result): result is PromiseFulfilledResult<PostMeta | null> => result.status === 'fulfilled')
+    .map(result => result.value)
     .filter((post): post is PostMeta => post !== null);
 
   // sort by date descending (newest first)

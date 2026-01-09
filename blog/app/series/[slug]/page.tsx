@@ -1,10 +1,16 @@
 import SiteLayout from "@/components/SiteLayout";
-import { findSeriesBySlug } from "@/lib/metadata-loader";
+import { findSeriesBySlug, loadSeriesMetadata } from "@/lib/metadata-loader";
 import { siteMetadata } from "@/lib/siteMetadata";
+import { formatImageUrl } from "@/lib/utils";
 import type { PostMeta } from "@/model/model";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+export async function generateStaticParams() {
+  const series = await loadSeriesMetadata();
+  return series.map((s) => ({ slug: s.slug }));
+}
 
 interface SeriesPageParams {
   slug: string;
@@ -29,12 +35,12 @@ export async function generateMetadata({ params }: SeriesPageProps) {
     description:
       series.description ||
       `Tutorial series about ${series.title}. Contains ${series.posts.length} parts.`,
-    // openGraph: {
-    //   title: series.title,
-    //   description: series.description,
-    //   url: `${siteMetadata.siteUrl}/series/${series.slug}`,
-    //   images: series.image ? [{ url: `${siteMetadata.siteUrl}${series.image}` }] : [],
-    // },
+    openGraph: {
+      title: series.title,
+      description: series.description,
+      url: `${siteMetadata.siteUrl}/series/${series.slug}`,
+      images: series.image ? [{ url: `${siteMetadata.siteUrl}${series.image}` }] : [],
+    },
   };
 }
 
@@ -65,12 +71,47 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
     notFound();
   }
 
-  const imageUrlAbsolute = series.image?.startsWith("http")
-    ? series.image
-    : `${siteMetadata.siteUrl}${series.image?.startsWith("/") ? "" : "/"}${series.image}`;
+  const imageSrc = series.image
+    ? series.image.startsWith("/") ? series.image : `/${series.image}`
+    : "";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: series.title,
+    description: series.description || `A ${series.posts.length}-part tutorial series about ${series.title}`,
+    url: `${siteMetadata.siteUrl}/series/${series.slug}`,
+    author: {
+      "@type": "Person",
+      name: siteMetadata.author,
+      url: siteMetadata.siteUrl,
+    },
+    publisher: {
+      "@type": "Person",
+      name: siteMetadata.author,
+    },
+    dateModified: new Date(series.lastModified).toISOString(),
+    ...(series.image && { image: formatImageUrl(series.image) }),
+    mainEntity: {
+      "@type": "ItemList",
+      name: series.title,
+      description: `Tutorial series containing ${series.posts.length} parts`,
+      numberOfItems: series.posts.length,
+      itemListElement: series.posts.map((post, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: post.title,
+        url: `${siteMetadata.siteUrl}/posts/${post.slug}`,
+      })),
+    },
+  };
 
   return (
     <SiteLayout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{series.title}</h1>
@@ -83,7 +124,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
           {series.image && (
             <div className="mt-6 relative h-48 w-full max-w-xl mx-auto rounded-lg overflow-hidden">
               <Image
-                src={imageUrlAbsolute}
+                src={imageSrc}
                 alt={`Image for ${series.title} series`}
                 fill
                 style={{ objectFit: "cover" }}

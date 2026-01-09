@@ -1,14 +1,16 @@
 "use client";
 
 import type { Heading } from "@/model/model";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 interface TableOfContentsProps {
   headings: Heading[];
 }
 
-export default function TableOfContents({ headings }: TableOfContentsProps) {
+function TableOfContentsInner({ headings }: TableOfContentsProps) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const isHashNavigating = useRef(false);
 
   // Check for hash in URL
   useEffect(() => {
@@ -17,7 +19,12 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1); // Remove the # character
       if (hash && headings.some((heading) => heading.slug === hash)) {
+        isHashNavigating.current = true;
         setActiveSlug(hash);
+        // Reset flag after scroll completes
+        setTimeout(() => {
+          isHashNavigating.current = false;
+        }, 100);
       }
     };
 
@@ -36,6 +43,9 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
     const observedElements = new Map();
     const observer = new IntersectionObserver(
       (entries) => {
+        // Skip if hash navigation is in progress
+        if (isHashNavigating.current) return;
+
         const intersectingEntry = entries.find((entry) => entry.isIntersecting);
         if (intersectingEntry) {
           setActiveSlug(intersectingEntry.target.id);
@@ -73,32 +83,30 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
     return null;
   }
 
-  const getIndentationClass = (depth: number) => {
-    switch (depth) {
-      case 1:
-        return "ml-0";
-      case 2:
-        return "ml-0";
-      case 3:
-        return "ml-2";
-      case 4:
-        return "ml-4";
-      case 5:
-        return "ml-6";
-      case 6:
-        return "ml-8";
-      default:
-        return "ml-0";
-    }
+  // Debug: log heading depths (remove after testing)
+  console.log("[TOC] Headings:", headings.map(h => ({ text: h.text.slice(0, 20), depth: h.depth })));
+
+  const getIndentationStyle = (depth: number): React.CSSProperties => {
+    // Using inline styles because Tailwind purges dynamic classes
+    // h2 = main sections (no indent), h3+ = progressively indented
+    const margins: Record<number, string> = {
+      1: "0",
+      2: "0",
+      3: "1rem",
+      4: "2rem",
+      5: "3rem",
+      6: "4rem",
+    };
+    return { marginLeft: margins[depth] || "0" };
   };
 
   return (
-    <nav className="sticky top-24 p-4 rounded-lg max-h-[calc(100vh-12rem)] overflow-y-auto">
+    <nav aria-label="Table of contents" className="sticky top-24 p-4 rounded-lg max-h-[calc(100vh-12rem)] overflow-y-auto">
       <ul className="space-y-2">
         {headings.map((heading) => (
           <li
             key={heading.slug}
-            className={getIndentationClass(heading.depth)}
+            style={getIndentationStyle(heading.depth)}
           >
             <a
               href={`#${heading.slug}`}
@@ -114,5 +122,21 @@ export default function TableOfContents({ headings }: TableOfContentsProps) {
         ))}
       </ul>
     </nav>
+  );
+}
+
+export default function TableOfContents({ headings }: TableOfContentsProps) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <nav aria-label="Table of contents" className="sticky top-24 p-4 rounded-lg">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Table of contents unavailable
+          </p>
+        </nav>
+      }
+    >
+      <TableOfContentsInner headings={headings} />
+    </ErrorBoundary>
   );
 }

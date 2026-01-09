@@ -80,10 +80,10 @@ export async function loadSeriesMetadata(): Promise<Series[]> {
 }
 
 /**
- * Generate series from posts (filesystem implementation to avoid circular dependencies)
+ * Builds series data from an array of posts.
+ * Shared logic used by both series.ts and metadata-loader.ts
  */
-async function getSeriesFromFS(): Promise<Series[]> {
-  const posts = await getAllPostsMetaFromFS();
+export function buildSeriesFromPosts(posts: PostMeta[]): Series[] {
   const seriesMap: Map<string, Series> = new Map();
 
   for (const post of posts) {
@@ -103,12 +103,7 @@ async function getSeriesFromFS(): Promise<Series[]> {
       });
     }
 
-    const currentSeries = seriesMap.get(seriesSlug) ?? {
-      title: seriesTitle,
-      slug: seriesSlug,
-      posts: [],
-      lastModified: post.lastModified || post.date,
-    };
+    const currentSeries = seriesMap.get(seriesSlug)!;
     currentSeries.posts.push(post);
 
     // Update lastModified date for the series if this post is newer
@@ -135,6 +130,14 @@ async function getSeriesFromFS(): Promise<Series[]> {
   allSeries.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
 
   return allSeries;
+}
+
+/**
+ * Generate series from posts (filesystem implementation)
+ */
+async function getSeriesFromFS(): Promise<Series[]> {
+  const posts = await getAllPostsMetaFromFS();
+  return buildSeriesFromPosts(posts);
 }
 
 /**
